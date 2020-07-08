@@ -164,6 +164,26 @@ public:
         return first.dbKey < second.dbKey;
     }
 
+    static bool compareOrfStartOrfEnd(const result_t &first, const result_t &second) {
+        if (second.queryOrfStartPos < first.queryOrfStartPos)
+            return false;
+        if (first.queryOrfStartPos < second.queryOrfStartPos)
+            return true;
+        if (second.queryOrfEndPos  < first.queryOrfEndPos )
+            return false;
+        if (first.queryOrfEndPos  < second.queryOrfEndPos )
+            return true;
+        if (second.dbOrfStartPos < first.dbOrfStartPos)
+            return false;
+        if (first.dbOrfStartPos < second.dbOrfStartPos)
+            return true;
+        if (second.dbOrfEndPos  < first.dbOrfEndPos )
+            return false;
+        if (first.dbOrfEndPos  < second.dbOrfEndPos )
+            return true;
+        return false;
+    }
+
     static bool compareHitByPos(const result_t &first, const result_t &second) {
         int firstQStartPos  = std::min(first.qStartPos, first.qEndPos);
         int secondQStartPos = std::min(second.qStartPos, second.qEndPos);
@@ -198,6 +218,54 @@ public:
         }
         return firstDbStart < secondDbStart;
     }
+    //to sort data
+    static bool compareByDbkeyAndStrand(const result_t &first, const result_t &second) {
+        if (first.dbKey < second.dbKey)
+            return true;
+        if (first.dbKey > second.dbKey)
+            return false;
+        bool firstDbIsReverse = first.dbEndPos < first.dbStartPos;
+        bool secondDbIsReverse = second.dbEndPos < second.dbStartPos;
+        if(firstDbIsReverse < secondDbIsReverse)
+            return true;
+        if (firstDbIsReverse > secondDbIsReverse)
+            return false;
+        return false;
+    }
+    static bool compareByStrand(const result_t &first, const result_t &second) {
+        bool firstDbIsReverse = first.dbEndPos < first.dbStartPos;
+        bool secondDbIsReverse = second.dbEndPos < second.dbStartPos;
+        if(firstDbIsReverse < secondDbIsReverse)
+            return true;
+        if (firstDbIsReverse > secondDbIsReverse)
+            return false;
+        return false;
+    }
+    static bool compareByDbposQpos(const result_t &first, const result_t &second){
+        bool strand = first.dbEndPos > first.dbStartPos;
+        //j_start
+        if (first.dbStartPos < second.dbStartPos)
+            return strand;
+        if (first.dbStartPos > second.dbStartPos)
+            return !strand;
+        //j_end
+        if (first.dbEndPos < second.dbEndPos)
+            return strand;
+        if (first.dbEndPos > second.dbEndPos)
+            return !strand;
+        //i_start
+        if (first.qStartPos < second.qStartPos)
+            return true;
+        if (first.qStartPos > second.qStartPos)
+            return false;
+        //i_end
+        if (first.qEndPos < second.qEndPos)
+            return true;
+        if (first.qEndPos > second.qEndPos)
+            return false;
+        return false;
+    }
+
 
     // map new query into memory (create queryProfile, ...)
     void initQuery(Sequence* query);
