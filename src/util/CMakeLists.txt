@@ -26,6 +26,7 @@ set(util_source_files
         util/orftocontig.cpp
         util/touchdb.cpp
         util/filterdb.cpp
+        util/findexons.cpp
         util/gff2db.cpp
         util/masksequence.cpp
         util/maskbygff.cpp
