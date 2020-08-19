@@ -325,6 +325,8 @@ public:
 
     static uint64_t revComplement(const uint64_t kmer, const int k);
 
+    static std::string reverseCigar(std::string backtrace);
+
     static bool hasAlignmentLength(int alnLenThr, int alnLen) {
         return alnLen >= alnLenThr;
     }

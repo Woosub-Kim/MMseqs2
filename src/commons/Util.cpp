@@ -703,3 +703,27 @@ std::string SSTR(float x) {
     int n = sprintf(buffer, "%.3f", x);
     return std::string(buffer, n);
 }
+
+std::string Util::reverseCigar(std::string backtrace){
+    std::string reversedBacktrace(backtrace.size(), ' ');
+    size_t btLen = backtrace.size();
+    for (size_t pos = 0; pos < backtrace.size(); pos++) {
+        size_t cnt = 0;
+        size_t tmpPos = pos;
+        while (isdigit(backtrace[tmpPos])) {
+            cnt++;
+            tmpPos++;
+        }
+        cnt++;
+        //std::cout << cnt << std::endl;
+        tmpPos = pos;
+        while (isdigit(backtrace[pos])) {
+            reversedBacktrace[btLen-tmpPos-cnt] = backtrace[pos];
+            pos++;
+            cnt--;
+        }
+        // write M, D, I
+        reversedBacktrace[btLen-tmpPos-cnt] = backtrace[pos];
+    }
+    return reversedBacktrace;
+}

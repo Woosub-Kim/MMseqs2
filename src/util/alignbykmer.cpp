@@ -180,7 +180,7 @@ int alignbykmer(int argc, const char **argv, const Command &command) {
             std::string bt;
             bt.reserve(par.maxSeqLen + 1);
 
-            unsigned int thread_idx = 0;
+            unsigned int thread_idx = 0; // ???
 #ifdef OPENMP
             thread_idx = (unsigned int) omp_get_thread_num();
 #endif
@@ -225,24 +225,25 @@ int alignbykmer(int argc, const char **argv, const Command &command) {
                         const unsigned char *kmer = target.nextKmer();
                         unsigned short kmerIdx = idxer.int2index(kmer);
                         if (queryPosLookup[kmerIdx] != USHRT_MAX) {
-                            unsigned short pos_j = target.getCurrentPosition();
-                            unsigned short pos_i = queryPosLookup[kmerIdx];
-                            unsigned short ij = pos_i - pos_j;
+                            unsigned short pos_j = target.getCurrentPosition(); // curr target position info
+                            unsigned short pos_i = queryPosLookup[kmerIdx]; //curr query positon info
+                            unsigned short ij = pos_i - pos_j; // ???
                             kmerPosVec[kmerPosSize].ij = ij;
                             kmerPosVec[kmerPosSize].i  = pos_i;
                             kmerPosVec[kmerPosSize].j  = pos_j;
-                            kmerPosSize++;
+                            kmerPosSize++; // size of kmer???
                         }
                     }
 
 
-                    std::sort(kmerPosVec, kmerPosVec + kmerPosSize, KmerPos::compareKmerPos);
-                    unsigned short region_min_i = USHRT_MAX;
-                    unsigned short region_max_i = 0;
-                    unsigned short region_min_j = USHRT_MAX;
-                    unsigned short region_max_j = 0;
-                    unsigned short region_max_kmer_cnt = 0;
-                    size_t stretcheSize = 0;
+                    std::sort(kmerPosVec, kmerPosVec + kmerPosSize, KmerPos::compareKmerPos); // sort
+                    unsigned short region_min_i = USHRT_MAX; //query data start point default <USHRT...>
+                    unsigned short region_max_i = 0; // query data end point default 0
+                    unsigned short region_min_j = USHRT_MAX; // target data start point default <USHRT...>
+                    unsigned short region_max_j = 0; // target data end point default 0
+                    unsigned short region_max_kmer_cnt = 0; // counter
+                    size_t stretcheSize = 0; //loop index
+
                     if (kmerPosSize > 1) {
                         unsigned int prevDiagonal = UINT_MAX;
                         unsigned short prev_i = 0;
@@ -250,10 +251,10 @@ int alignbykmer(int argc, const char **argv, const Command &command) {
 
                         for (size_t kmerIdx = 0; kmerIdx < kmerPosSize; kmerIdx++) {
                             unsigned int currDiagonal = static_cast<unsigned int>(kmerPosVec[kmerIdx].i) - static_cast<unsigned int>(kmerPosVec[kmerIdx].j);
-                            unsigned short curr_i = kmerPosVec[kmerIdx].i;
-                            unsigned short curr_j = kmerPosVec[kmerIdx].j;
+                            unsigned short curr_i = kmerPosVec[kmerIdx].i; // <curr_i> is from <kmerPosVec> . query
+                            unsigned short curr_j = kmerPosVec[kmerIdx].j; // <curr_j> is from <kmerPosVec> . target
                             unsigned int nextDiagonal = UINT_MAX;
-                            if (kmerIdx < (kmerPosSize - 1)) {
+                            if (kmerIdx < (kmerPosSize - 1)) { // end of loop
                                 nextDiagonal = static_cast<unsigned int>(kmerPosVec[kmerIdx+1].i) - static_cast<unsigned int>(kmerPosVec[kmerIdx+1].j);
                             }
                             // skip single hits
@@ -271,48 +272,50 @@ int alignbykmer(int argc, const char **argv, const Command &command) {
                                 region_max_i = std::max(region_max_i, curr_i);
                                 region_min_j = std::min(region_min_j, curr_j);
                                 region_max_j = std::max(region_max_j, curr_j);
-                                region_max_kmer_cnt++;
+                                region_max_kmer_cnt++; // howmany kmmer
                             }
-                            prevDiagonal = currDiagonal;
-                            prev_i=curr_i;
-                            prev_j=curr_j;
-                            if (nextDiagonal != currDiagonal || kmerIdx == (kmerPosSize - 1)) {
+                            prevDiagonal = currDiagonal; // current to prev
+                            prev_i=curr_i; // current to prev
+                            prev_j=curr_j; // current to prev
+                            if (nextDiagonal != currDiagonal || kmerIdx == (kmerPosSize - 1)) { // go next
 //                                std::cout << region_min_i << "\t" << region_max_i << "\t" << region_min_j << "\t"  << region_max_j << "\t" << region_min_i - region_min_j << std::endl;
-                                stretcheVec[stretcheSize].i_start = region_min_i;
-                                stretcheVec[stretcheSize].i_end = region_max_i;
-                                stretcheVec[stretcheSize].j_start = region_min_j;
-                                stretcheVec[stretcheSize].j_end = region_max_j;
-                                stretcheVec[stretcheSize].kmerCnt = region_max_kmer_cnt;
+                                stretcheVec[stretcheSize].i_start = region_min_i; // save curr data
+                                stretcheVec[stretcheSize].i_end = region_max_i; // save curr data
+                                stretcheVec[stretcheSize].j_start = region_min_j; // save curr data
+                                stretcheVec[stretcheSize].j_end = region_max_j; // save curr data
+                                stretcheVec[stretcheSize].kmerCnt = region_max_kmer_cnt; // what
 
-                                stretcheSize++;
-                                region_min_i = USHRT_MAX;
-                                region_max_i = 0;
-                                region_min_j = USHRT_MAX;
-                                region_max_j = 0;
-                                region_max_kmer_cnt = 0;
-                                prev_i=0;
-                                prev_j=0;
+                                stretcheSize++; //the number of stretch
+                                region_min_i = USHRT_MAX; //initialize variable
+                                region_max_i = 0; //initialize variable
+                                region_min_j = USHRT_MAX; //initialize variable
+                                region_max_j = 0; //initialize variable
+                                region_max_kmer_cnt = 0; //initialize variable
+                                prev_i=0; //initialize variable
+                                prev_j=0; //initialize variable
                             }
                         }
                     }
+
+
                     // Do dynamic programming
                     std::sort(stretcheVec, stretcheVec + stretcheSize, Stretche::compareStretche);
                     for (size_t id = 0; id < stretcheSize; ++id) {
-                        dpMatrixRow[id].prevPotentialId = id;
-                        dpMatrixRow[id].pathScore = stretcheVec[id].kmerCnt;
+                        dpMatrixRow[id].prevPotentialId = id;  // save index info
+                        dpMatrixRow[id].pathScore = stretcheVec[id].kmerCnt; // pathsore <- kmerCnt why????????????
                     }
-                    int bestPathScore = 0;
-                    size_t lastPotentialExonInBestPath = 0;
+                    int bestPathScore = 0; // bestscore default 0
+                    size_t lastPotentialExonInBestPath = 0; //
                     for (size_t currStretche = 0; currStretche < stretcheSize; ++currStretche) {
                         for (size_t prevPotentialStretche = 0; prevPotentialStretche < currStretche; ++prevPotentialStretche) {
                             // check the first one does not contain the second one:
                             if (stretcheVec[currStretche].i_start > stretcheVec[prevPotentialStretche].i_end &&
-                                    stretcheVec[currStretche].j_start > stretcheVec[prevPotentialStretche].i_end) {
-                                int bestScorePathPrevIsLast = dpMatrixRow[prevPotentialStretche].pathScore;
-                                int distance =  gapOpen + (stretcheVec[prevPotentialStretche].i_end - stretcheVec[currStretche].i_start) * gapExtend;
-                                int costOfPrevToCurrTransition = distance;
-                                int currScore = stretcheVec[currStretche].kmerCnt*par.kmerSize*2;
-                                int currScoreWithPrev = bestScorePathPrevIsLast + costOfPrevToCurrTransition + currScore;
+                                    stretcheVec[currStretche].j_start > stretcheVec[prevPotentialStretche].j_end) { // code for no overlap
+                                int bestScorePathPrevIsLast = dpMatrixRow[prevPotentialStretche].pathScore; // prev path score
+                                int distance =  gapOpen + (stretcheVec[prevPotentialStretche].i_end - stretcheVec[currStretche].i_start)*gapExtend; //curr prev distance gap inside exon
+                                int costOfPrevToCurrTransition = distance; // <distant> used as the cost:<costOf...>
+                                int currScore = stretcheVec[currStretche].kmerCnt*par.kmerSize*2; //score cal method
+                                int currScoreWithPrev = bestScorePathPrevIsLast + costOfPrevToCurrTransition + currScore; // prevnode score + score - cost
 
                                 // update row of currPotentialExon in case of improvement:
                                 if (currScoreWithPrev > dpMatrixRow[currStretche].pathScore) {
@@ -329,17 +332,18 @@ int alignbykmer(int argc, const char **argv, const Command &command) {
                         }
                     }
 
-                    size_t currId = lastPotentialExonInBestPath;
-                    std::vector<Stretche> strechtPath;
-                    while (dpMatrixRow[currId].prevPotentialId != currId) {
-                        strechtPath.emplace_back(stretcheVec[currId]);
-                        currId = dpMatrixRow[currId].prevPotentialId;
+                    size_t currId = lastPotentialExonInBestPath; // start with bastpath last potential exon
+                    std::vector<Stretche> strechtPath; // object for Path..
+                    while (dpMatrixRow[currId].prevPotentialId != currId) { //go back and emplace_back
+                        strechtPath.emplace_back(stretcheVec[currId]); //what happen????????
+                        currId = dpMatrixRow[currId].prevPotentialId; //currId changed go back
                     }
-                    strechtPath.emplace_back(stretcheVec[currId]);
+                    strechtPath.emplace_back(stretcheVec[currId]); // first currId from best path
+
                     // do 1d dp to find optimal transition point
-                    for (size_t stretch = (strechtPath.size() - 1); stretch > 0; stretch--) {
-                        int score = 0;
-                        int pos = 0;
+                    for (size_t stretch = (strechtPath.size() - 1); stretch > 0; stretch--) {  // go back
+                        int score = 0; //
+                        int pos = 0; //
 //                        query.print();
 //                        target.print();
 
@@ -355,21 +359,21 @@ int alignbykmer(int argc, const char **argv, const Command &command) {
 //                        }
 //                        std::cout << std::endl;
 
-                        for (int i = strechtPath[stretch].i_end, j = strechtPath[stretch].j_end;
+                        for (int i = strechtPath[stretch].i_end, j = strechtPath[stretch].j_end; //bp by bp intron
                              i < strechtPath[stretch - 1].i_start && j < strechtPath[stretch - 1].j_start; i++, j++) {
-                            int curr = subMat->subMatrix[query.numSequence[i]][target.numSequence[j]];
+                            int curr = subMat->subMatrix[query.numSequence[i]][target.numSequence[j]]; //score calculation
                             score = curr + score;
 //                            score = (score < 0) ? 0 : score;
-                            scores[pos] = score;
-                            pos++;
+                            scores[pos] = score; //score useless???????
+                            pos++; //length
                         }
-                        int maxScore = 0;
-                        int maxPos = 0;
-                        int maxRevPos = 0;
-                        int revPos = 0;
-                        scores[pos] = 0;
+                        int maxScore = 0; //
+                        int maxPos = 0; //
+                        int maxRevPos = 0; //
+                        int revPos = 0; //
+                        scores[pos] = 0; //??????? why zero
                         score = 0;
-                        for (int i = strechtPath[stretch - 1].i_start, j = strechtPath[stretch - 1].j_start;
+                        for (int i = strechtPath[stretch - 1].i_start, j = strechtPath[stretch - 1].j_start; //bp by bp
                              i > strechtPath[stretch].i_end && j > strechtPath[stretch].j_end; i--, j--) {
                             int curr = subMat->subMatrix[query.numSequence[i]][target.numSequence[j]];
                             score = curr + score;
@@ -454,15 +458,15 @@ int alignbykmer(int argc, const char **argv, const Command &command) {
 
 //                    std::cout << querystr << std::endl;
 //                    std::cout << targetstr << std::endl;
+                    //cover calculation
                     float queryCov = SmithWaterman::computeCov(strechtPath[strechtPath.size()-1].i_start , strechtPath[0].i_end,  query.L);
                     float targetCov = SmithWaterman::computeCov(strechtPath[strechtPath.size()-1].j_start , strechtPath[0].j_end, target.L);
-                    int alnLen = bt.size();
 
-                    const float seqId = static_cast<float>(ids)/static_cast<float>(alnLen);
+                    int alnLen = bt.size(); // length of alignment
+                    const float seqId = static_cast<float>(ids)/static_cast<float>(alnLen); //identity
+                    int bitScore = static_cast<int>(evaluer.computeBitScore(score)+0.5); //bitscore
 
-                    int bitScore = static_cast<int>(evaluer.computeBitScore(score)+0.5);
-
-                    const double evalue = evaluer.computeEvalue(score, query.L);
+                    const double evalue = evaluer.computeEvalue(score, query.L); //evaluating
                     // query/target cov mode
                     const bool hasCov = Util::hasCoverage(par.covThr, par.covMode, queryCov, targetCov);
                     // --min-seq-id
@@ -474,21 +478,22 @@ int alignbykmer(int argc, const char **argv, const Command &command) {
                                                                      strechtPath[strechtPath.size()-1].i_start , strechtPath[0].i_end, query.L, strechtPath[strechtPath.size()-1].j_start, strechtPath[0].j_end,
                                                                      target.L, bt);
                         size_t len = Matcher::resultToBuffer(buffer, result, true, true);
-                        resultWriter.writeAdd(buffer, len, thread_idx);
+                        resultWriter.writeAdd(buffer, len, thread_idx);//result buffer, len, thread_idx
                     }
                     data = Util::skipLine(data);
                     bt.clear();
-                }
+                } // end of While loop
                 memset(queryPosLookup, 255, lookupSize * sizeof(unsigned short));
-                resultWriter.writeEnd(qdbr->getDbKey(queryId), thread_idx, true);
+                resultWriter.writeEnd(qdbr->getDbKey(queryId), thread_idx, true); //resultwriter
             }
+            // delete
             delete [] kmerPosVec;
             delete [] queryPosLookup;
             delete [] dpMatrixRow;
             delete [] scores;
         }
         dbr_res.remapData();
-    }
+    } //first for loop end
 
     resultWriter.close();
     dbr_res.close();
@@ -506,6 +511,6 @@ int alignbykmer(int argc, const char **argv, const Command &command) {
         }
     }
     return EXIT_SUCCESS;
-}
+} //method end
 
 

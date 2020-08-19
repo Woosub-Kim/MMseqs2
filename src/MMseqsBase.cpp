@@ -579,8 +579,6 @@ std::vector<Command> baseCommands = {
                                           {"resultDB", DbType::ACCESS_MODE_INPUT, DbType::NEED_DATA, &DbValidator::resultDb },
                                           {"alignmentDB", DbType::ACCESS_MODE_OUTPUT, DbType::NEED_DATA, &DbValidator::alignmentDb }}},
 
-
-
         {"clust",                clust,                &par.clust,                COMMAND_CLUSTER,
                 "Cluster result by Set-Cover/Connected-Component/Greedy-Incremental",
                 NULL,
