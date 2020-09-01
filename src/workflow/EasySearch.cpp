@@ -16,6 +16,7 @@ void setEasySearchDefaults(Parameters *p, bool linsearch) {
     p->removeTmpFiles = true;
     p->writeLookup = false;
     p->alignmentMode = Parameters::ALIGNMENT_MODE_SCORE_COV_SEQID;
+    p->orfFilter = 0;
 }
 
 void setEasySearchMustPassAlong(Parameters *p, bool linsearch) {
@@ -25,6 +26,7 @@ void setEasySearchMustPassAlong(Parameters *p, bool linsearch) {
     p->PARAM_S.wasSet = true;
     p->PARAM_REMOVE_TMP_FILES.wasSet = true;
     p->PARAM_ALIGNMENT_MODE.wasSet = true;
+    p->PARAM_ORF_FILTER.wasSet = true;
 }
 
 int doeasysearch(int argc, const char **argv, const Command &command, bool linsearch) {
@@ -65,7 +67,7 @@ int doeasysearch(int argc, const char **argv, const Command &command, bool linse
         bool needSequenceDB = false;
         bool needFullHeaders = false;
         bool needSource = false;
-        Parameters::getOutputFormat(par.outfmt, needSequenceDB, needBacktrace, needFullHeaders,
+        Parameters::getOutputFormat(par.formatAlignmentMode, par.outfmt, needSequenceDB, needBacktrace, needFullHeaders,
                 needLookup, needSource, needTaxonomyMapping, needTaxonomy);
     }
 

@@ -28,12 +28,14 @@ set(util_source_files
         util/filterdb.cpp
         util/findexons.cpp
         util/gff2db.cpp
+        util/renamedbkeys.cpp
         util/masksequence.cpp
         util/maskbygff.cpp
         util/mergeclusters.cpp
         util/mergeresultsbyset.cpp
         util/mergedbs.cpp
         util/msa2profile.cpp
+        util/msa2result.cpp
         util/mvdb.cpp
         util/countkmer.cpp
         util/prefixid.cpp

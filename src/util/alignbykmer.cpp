@@ -10,6 +10,7 @@
 #include "ReducedMatrix.h"
 #include "ExtendedSubstitutionMatrix.h"
 #include "IndexReader.h"
+#include "FastSort.h"
 #include <string>
 #include <vector>
 
@@ -236,13 +237,13 @@ int alignbykmer(int argc, const char **argv, const Command &command) {
                     }
 
 
-                    std::sort(kmerPosVec, kmerPosVec + kmerPosSize, KmerPos::compareKmerPos); // sort
-                    unsigned short region_min_i = USHRT_MAX; //query data start point default <USHRT...>
-                    unsigned short region_max_i = 0; // query data end point default 0
-                    unsigned short region_min_j = USHRT_MAX; // target data start point default <USHRT...>
-                    unsigned short region_max_j = 0; // target data end point default 0
-                    unsigned short region_max_kmer_cnt = 0; // counter
-                    size_t stretcheSize = 0; //loop index
+                    SORT_SERIAL(kmerPosVec, kmerPosVec + kmerPosSize, KmerPos::compareKmerPos);
+                    unsigned short region_min_i = USHRT_MAX;
+                    unsigned short region_max_i = 0;
+                    unsigned short region_min_j = USHRT_MAX;
+                    unsigned short region_max_j = 0;
+                    unsigned short region_max_kmer_cnt = 0;
+                    size_t stretcheSize = 0;
 
                     if (kmerPosSize > 1) {
                         unsigned int prevDiagonal = UINT_MAX;
@@ -299,7 +300,7 @@ int alignbykmer(int argc, const char **argv, const Command &command) {
 
 
                     // Do dynamic programming
-                    std::sort(stretcheVec, stretcheVec + stretcheSize, Stretche::compareStretche);
+                    SORT_SERIAL(stretcheVec, stretcheVec + stretcheSize, Stretche::compareStretche);
                     for (size_t id = 0; id < stretcheSize; ++id) {
                         dpMatrixRow[id].prevPotentialId = id;  // save index info
                         dpMatrixRow[id].pathScore = stretcheVec[id].kmerCnt; // pathsore <- kmerCnt why????????????

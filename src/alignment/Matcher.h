@@ -84,6 +84,8 @@ public:
                                           dbcov(dbcov), seqId(seqId), eval(eval), alnLength(alnLength),
                                           qStartPos(qStartPos), qEndPos(qEndPos), qLen(qLen),
                                           dbStartPos(dbStartPos), dbEndPos(dbEndPos), dbLen(dbLen),
+                                          queryOrfStartPos(-1), queryOrfEndPos(-1),
+                                          dbOrfStartPos(-1), dbOrfEndPos(-1),
                                           backtrace(backtrace) {};
 
         result_t(){};
@@ -297,6 +299,8 @@ public:
 
     static int computeAlnLength(int anEnd, int start, int dbEnd, int dbStart);
 
+    static void updateResultByRescoringBacktrace(const char *querySeq, const char *targetSeq, const char **subMat, EvalueComputation &evaluer,
+                                                    int gapOpen, int gapExtend, result_t &result);
 
 private:
 
