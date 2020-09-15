@@ -276,11 +276,11 @@ class ExonFinder{
                         overlap -= tupleVector[cnt].second;
                         break;
                     default:
-                        returnString = returnString + std::to_string(tupleVector[cnt].second) + tupleVector[cnt].first;
+                        returnString = std::to_string(tupleVector[cnt].second) + tupleVector[cnt].first + returnString;
                         break;
                 }
             } else {
-                returnString = returnString + std::to_string(tupleVector[cnt].second) + tupleVector[cnt].first;
+                returnString = std::to_string(tupleVector[cnt].second) + tupleVector[cnt].first + returnString;
             }
         }
         return std::pair<std::string,int>(returnString, returnNumber);
@@ -472,7 +472,7 @@ class ExonFinder{
                 int currDbPos = tempExonVec[trimmedExon].dbEndPos - inScope;
                 int overlapLength = inScope;
                 int dbScopeEndPos = tempExonVec[trimmedExon].dbEndPos+outScope;
-                std::string tempCigar = Util::reverseCigar(tempExonVec[trimmedExon].backtrace);
+                std::string tempCigar = tempExonVec[trimmedExon].backtrace;
                 int tempQueryPos = tempExonVec[trimmedExon].qEndPos;
                 while(currDbPos < dbScopeEndPos + 3 + outScope){
                     if (currDbPos > tempExonVec[trimmedExon].dbOrfEndPos + outScope )
@@ -496,7 +496,7 @@ class ExonFinder{
                 int currDbPos = tempExonVec[trimmedExon].dbEndPos + inScope;
                 int overlapLength = inScope;
                 int dbScopeEndPos = tempExonVec[trimmedExon].dbEndPos-outScope;
-                std::string tempCigar = Util::reverseCigar(tempExonVec[trimmedExon].backtrace);
+                std::string tempCigar = tempExonVec[trimmedExon].backtrace;
                 int tempQueryPos = tempExonVec[trimmedExon].qEndPos;
                 //int temp = tempExonVec[trimmedExon].dbStartPos;
                 while(currDbPos > dbScopeEndPos - 3 - outScope){
@@ -586,8 +586,8 @@ int findexons(int argc, const char **argv, const Command &command) {
 //                // SEQUENCE IDENTITY THNRESHOLD
 //                if(inputAlignments[resIdx].seqId<0.65)
 //                    continue;
-                if(inputAlignments[resIdx].dbKey!=0)
-                    continue;
+//                if(inputAlignments[resIdx].dbKey!=0)
+//                    continue;
 
 
                 if(inputAlignments[resIdx].qStartPos>inputAlignments[resIdx].qEndPos){
@@ -627,13 +627,13 @@ int findexons(int argc, const char **argv, const Command &command) {
                     size_t len = Matcher::resultToBuffer(buffer, optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx], true, false, true);
                     resultWriter.writeAdd(buffer, len, thread_idx);//result buffer, len, thread_idx
 
-//                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbStartPos+1 <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbEndPos+1 << "  \t";
-//                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbEndPos  - optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbStartPos   << "  \t";
-//                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].qStartPos <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].qEndPos << "  \t";
-//                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].queryOrfStartPos <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].queryOrfEndPos << "  \t";
-//                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbOrfStartPos <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbOrfEndPos << "  \t";
-//                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].backtrace<<"_"<<optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].seqId<< "\t";
-//                    std::cout << queryKey << "_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbKey << "\n";
+                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbStartPos+1 <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbEndPos+1 << "  \t";
+                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbEndPos  - optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbStartPos   << "  \t";
+                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].qStartPos <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].qEndPos << "  \t";
+                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].queryOrfStartPos <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].queryOrfEndPos << "  \t";
+                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbOrfStartPos <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbOrfEndPos << "  \t";
+                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].backtrace<<"_"<<optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].seqId<< "\t";
+                    std::cout << queryKey << "_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbKey << "\n";
 
                 }
             }
