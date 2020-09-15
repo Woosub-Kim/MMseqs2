@@ -248,10 +248,10 @@ class ExonFinder{
             switch (tupleVector[cnt].first) {
                 case 'I':
                     returnNumber += tempOverlap;
-                    tupleVector[cnt].second = 0;
+                    tupleVector[cnt].second -= tempOverlap;
                     break;
                 case  'D':
-                    tupleVector[cnt].second = 0;
+                    tupleVector[cnt].second -= tempOverlap;
                     overlap -= tempOverlap;
                     break;
                 default:
@@ -276,11 +276,11 @@ class ExonFinder{
                         overlap -= tupleVector[cnt].second;
                         break;
                     default:
-                        returnString = std::to_string(tupleVector[cnt].second) + tupleVector[cnt].first + returnString;
+                        returnString = returnString + std::to_string(tupleVector[cnt].second) + tupleVector[cnt].first;
                         break;
                 }
             } else {
-                returnString = std::to_string(tupleVector[cnt].second) + tupleVector[cnt].first + returnString;
+                returnString = returnString + std::to_string(tupleVector[cnt].second) + tupleVector[cnt].first;
             }
         }
         return std::pair<std::string,int>(returnString, returnNumber);
@@ -586,8 +586,8 @@ int findexons(int argc, const char **argv, const Command &command) {
 //                // SEQUENCE IDENTITY THNRESHOLD
 //                if(inputAlignments[resIdx].seqId<0.65)
 //                    continue;
-//                if(inputAlignments[resIdx].dbKey!=0)
-//                    continue;
+                if(inputAlignments[resIdx].dbKey!=0)
+                    continue;
 
 
                 if(inputAlignments[resIdx].qStartPos>inputAlignments[resIdx].qEndPos){
