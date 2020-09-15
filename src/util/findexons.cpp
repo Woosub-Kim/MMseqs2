@@ -627,13 +627,13 @@ int findexons(int argc, const char **argv, const Command &command) {
                     size_t len = Matcher::resultToBuffer(buffer, optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx], true, false, true);
                     resultWriter.writeAdd(buffer, len, thread_idx);//result buffer, len, thread_idx
 
-                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbStartPos+1 <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbEndPos+1 << "  \t";
-                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbEndPos  - optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbStartPos   << "  \t";
-                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].qStartPos <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].qEndPos << "  \t";
-                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].queryOrfStartPos <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].queryOrfEndPos << "  \t";
-                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbOrfStartPos <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbOrfEndPos << "  \t";
-                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].backtrace<<"_"<<optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].seqId<< "\t";
-                    std::cout << queryKey << "_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbKey << "\n";
+//                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbStartPos+1 <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbEndPos+1 << "  \t";
+//                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbEndPos  - optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbStartPos   << "  \t";
+//                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].qStartPos <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].qEndPos << "  \t";
+//                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].queryOrfStartPos <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].queryOrfEndPos << "  \t";
+//                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbOrfStartPos <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbOrfEndPos << "  \t";
+//                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].backtrace<<"_"<<optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].seqId<< "\t";
+//                    std::cout << queryKey << "_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbKey << "\n";
 
                 }
             }
