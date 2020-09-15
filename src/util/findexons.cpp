@@ -77,12 +77,12 @@ class ExonFinder{
                 size_t currId;
 
                 for (size_t currExon = 0; currExon < trimmedExonResult.size(); currExon++) {
-                    std::cout << trimmedExonResult[currExon].qStartPos << "\t" << trimmedExonResult[currExon].qEndPos << "\t";
-                    std::cout << trimmedExonResult[currExon].dbStartPos+1 << "\t" << trimmedExonResult[currExon].dbEndPos+1 << "\t";
-                    std::cout << trimmedExonResult[currExon].queryOrfStartPos << "_" << trimmedExonResult[currExon].queryOrfEndPos << "\t";
-                    std::cout << trimmedExonResult[currExon].dbOrfStartPos+1 << "_" << trimmedExonResult[currExon].dbOrfEndPos+1 << "\t";
-                    std::cout << trimmedExonResult[currExon].backtrace<< "\t";
-                    std::cout << trimmedExonResult[currExon].dbKey<< "\t" << trimmedExonResult[currExon].seqId<< "\n";
+//                    std::cout << trimmedExonResult[currExon].qStartPos << "\t" << trimmedExonResult[currExon].qEndPos << "\t";
+//                    std::cout << trimmedExonResult[currExon].dbStartPos+1 << "\t" << trimmedExonResult[currExon].dbEndPos+1 << "\t";
+//                    std::cout << trimmedExonResult[currExon].queryOrfStartPos << "_" << trimmedExonResult[currExon].queryOrfEndPos << "\t";
+//                    std::cout << trimmedExonResult[currExon].dbOrfStartPos+1 << "_" << trimmedExonResult[currExon].dbOrfEndPos+1 << "\t";
+//                    std::cout << trimmedExonResult[currExon].backtrace<< "\t";
+//                    std::cout << trimmedExonResult[currExon].dbKey<< "\t" << trimmedExonResult[currExon].seqId<< "\n";
                     for (size_t prevExon = 0; prevExon < currExon; prevExon++) {
                         bool strand = trimmedExonResult[currExon].dbEndPos>trimmedExonResult[currExon].dbStartPos;
                         int intronLength = strand?trimmedExonResult[currExon].dbStartPos - trimmedExonResult[prevExon].dbEndPos+1:trimmedExonResult[prevExon].dbEndPos-trimmedExonResult[currExon].dbStartPos+1 ;
@@ -110,8 +110,8 @@ class ExonFinder{
                     } //end of if conditional statement
                 } //end of DP 1st for loop statement
 
-                std::cout << "----------" << "\n";
-                std::cout << bestPathScore << "\n\n";
+//                std::cout << "----------" << "\n";
+//                std::cout << bestPathScore << "\n\n";
 
                 //end of Dynamic Progamming
                 //to update <optimalExonSolution>
@@ -576,12 +576,12 @@ int findexons(int argc, const char **argv, const Command &command) {
                 // In default we search only on the formward frame 1,2,3 so this function is not called
                 // It is only important if search also on the backward frame!
 
-                std::cout << inputAlignments[resIdx].qStartPos << "\t" << inputAlignments[resIdx].qEndPos << "\t";
-                std::cout << inputAlignments[resIdx].dbStartPos+1 << "\t" << inputAlignments[resIdx].dbEndPos+1 << "\t";
-                std::cout << inputAlignments[resIdx].queryOrfStartPos << "_" << inputAlignments[resIdx].queryOrfEndPos << "\t";
-                std::cout << inputAlignments[resIdx].dbOrfStartPos+1 << "_" << inputAlignments[resIdx].dbOrfEndPos+1 << "\t";
-                std::cout << inputAlignments[resIdx].dbKey << "\t" << inputAlignments[resIdx].score << "\t" << inputAlignments[resIdx].eval <<"\t";
-                std::cout << inputAlignments[resIdx].seqId<< "\t" << inputAlignments[resIdx].backtrace<< "+++\n";
+//                std::cout << inputAlignments[resIdx].qStartPos << "\t" << inputAlignments[resIdx].qEndPos << "\t";
+//                std::cout << inputAlignments[resIdx].dbStartPos+1 << "\t" << inputAlignments[resIdx].dbEndPos+1 << "\t";
+//                std::cout << inputAlignments[resIdx].queryOrfStartPos << "_" << inputAlignments[resIdx].queryOrfEndPos << "\t";
+//                std::cout << inputAlignments[resIdx].dbOrfStartPos+1 << "_" << inputAlignments[resIdx].dbOrfEndPos+1 << "\t";
+//                std::cout << inputAlignments[resIdx].dbKey << "\t" << inputAlignments[resIdx].score << "\t" << inputAlignments[resIdx].eval <<"\t";
+//                std::cout << inputAlignments[resIdx].seqId<< "\t" << inputAlignments[resIdx].backtrace<< "+++\n";
 
 //                // SEQUENCE IDENTITY THNRESHOLD
 //                if(inputAlignments[resIdx].seqId<0.65)
@@ -627,13 +627,13 @@ int findexons(int argc, const char **argv, const Command &command) {
                     size_t len = Matcher::resultToBuffer(buffer, optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx], true, false, true);
                     resultWriter.writeAdd(buffer, len, thread_idx);//result buffer, len, thread_idx
 
-                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbStartPos+1 <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbEndPos+1 << "  \t";
-                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbEndPos  - optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbStartPos   << "  \t";
-                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].qStartPos <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].qEndPos << "  \t";
-                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].queryOrfStartPos <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].queryOrfEndPos << "  \t";
-                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbOrfStartPos <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbOrfEndPos << "  \t";
-                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].backtrace<<"_"<<optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].seqId<< "\t";
-                    std::cout << queryKey << "_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbKey << "\n";
+//                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbStartPos+1 <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbEndPos+1 << "  \t";
+//                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbEndPos  - optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbStartPos   << "  \t";
+//                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].qStartPos <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].qEndPos << "  \t";
+//                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].queryOrfStartPos <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].queryOrfEndPos << "  \t";
+//                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbOrfStartPos <<"_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbOrfEndPos << "  \t";
+//                    std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].backtrace<<"_"<<optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].seqId<< "\t";
+//                    std::cout << queryKey << "_" << optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx].dbKey << "\n";
 
                 }
             }
