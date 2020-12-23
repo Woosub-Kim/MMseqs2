@@ -36,7 +36,7 @@ set(util_source_files
         util/mergedbs.cpp
         util/msa2profile.cpp
         util/msa2result.cpp
-        util/mvdb.cpp
+        util/nrtotaxmapping.cpp
         util/countkmer.cpp
         util/prefixid.cpp
         util/profile2cs.cpp
@@ -51,7 +51,7 @@ set(util_source_files
         util/result2repseq.cpp
         util/result2stats.cpp
         util/reverseseq.cpp
-        util/rmdb.cpp
+        util/cpmvrmlndb.cpp
         util/extractframes.cpp
         util/sortresult.cpp
         util/splitdb.cpp

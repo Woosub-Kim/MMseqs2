@@ -30,7 +30,7 @@ void setSearchDefaults(Parameters *p) {
 }
 
 
-int computeSearchMode(int queryDbType, int targetDbType, int targetSrcDbType, int searchType){
+int computeSearchMode(int queryDbType, int targetDbType, int targetSrcDbType, int searchType) {
     // reject unvalid search
     if (Parameters::isEqualDbtype(queryDbType, Parameters::DBTYPE_HMM_PROFILE) &&
         Parameters::isEqualDbtype(targetDbType,Parameters::DBTYPE_HMM_PROFILE)) {
@@ -211,6 +211,9 @@ int search(int argc, const char **argv, const Command& command) {
     for (size_t i = 0; i < par.translatenucs.size(); i++) {
         par.translatenucs[i]->addCategory(MMseqsParameter::COMMAND_EXPERT);
     }
+    for (size_t i = 0; i < par.splitsequence.size(); i++) {
+        par.splitsequence[i]->addCategory(MMseqsParameter::COMMAND_EXPERT);
+    }
     par.PARAM_COMPRESSED.removeCategory(MMseqsParameter::COMMAND_EXPERT);
     par.PARAM_THREADS.removeCategory(MMseqsParameter::COMMAND_EXPERT);
     par.PARAM_V.removeCategory(MMseqsParameter::COMMAND_EXPERT);
@@ -238,7 +241,6 @@ int search(int argc, const char **argv, const Command& command) {
     }
 
     int searchMode = computeSearchMode(queryDbType, targetDbType, targetSrcDbType, par.searchType);
-
     if ((searchMode & Parameters::SEARCH_MODE_FLAG_QUERY_NUCLEOTIDE) && (searchMode & Parameters::SEARCH_MODE_FLAG_TARGET_NUCLEOTIDE)) {
         setNuclSearchDefaults(&par);
     } else{
@@ -253,7 +255,13 @@ int search(int argc, const char **argv, const Command& command) {
     const bool isUngappedMode = par.alignmentMode == Parameters::ALIGNMENT_MODE_UNGAPPED;
     if (isUngappedMode && (searchMode & (Parameters::SEARCH_MODE_FLAG_QUERY_PROFILE |Parameters::SEARCH_MODE_FLAG_TARGET_PROFILE ))) {
         par.printUsageMessage(command, MMseqsParameter::COMMAND_ALIGN | MMseqsParameter::COMMAND_PREFILTER);
-        Debug(Debug::ERROR) << "Cannot use ungapped alignment mode with profile databases.\n";
+        Debug(Debug::ERROR) << "Cannot use ungapped alignment mode with profile databases\n";
+        EXIT(EXIT_FAILURE);
+    }
+
+    if (isUngappedMode && par.lcaSearch) {
+        par.printUsageMessage(command, MMseqsParameter::COMMAND_ALIGN | MMseqsParameter::COMMAND_PREFILTER);
+        Debug(Debug::ERROR) << "Cannot use ungapped alignment mode with lca search\n";
         EXIT(EXIT_FAILURE);
     }
 
@@ -282,7 +290,7 @@ int search(int argc, const char **argv, const Command& command) {
     par.printParameters(command.cmd, argc, argv, par.searchworkflow);
 
     std::string tmpDir = par.db4;
-    std::string hash = SSTR(par.hashParameter(par.filenames, par.searchworkflow));
+    std::string hash = SSTR(par.hashParameter(command.databases, par.filenames, par.searchworkflow));
     if (par.reuseLatest) {
         hash = FileUtil::getHashFromSymLink(tmpDir + "/latest");
     }
@@ -295,14 +303,19 @@ int search(int argc, const char **argv, const Command& command) {
     cmd.addVariable("VERBOSITY", par.createParameterString(par.onlyverbosity).c_str());
     cmd.addVariable("THREADS_COMP_PAR", par.createParameterString(par.threadsandcompression).c_str());
     cmd.addVariable("VERB_COMP_PAR", par.createParameterString(par.verbandcompression).c_str());
-    cmd.addVariable("ALIGN_MODULE", isUngappedMode ? "rescorediagonal" : "align");
+    if (isUngappedMode) {
+        cmd.addVariable("ALIGN_MODULE", "rescorediagonal");
+    } else if (par.lcaSearch) {
+        cmd.addVariable("ALIGN_MODULE", "lcaalign");
+    } else {
+        cmd.addVariable("ALIGN_MODULE", "align");
+    }
     cmd.addVariable("REMOVE_TMP", par.removeTmpFiles ? "TRUE" : NULL);
     std::string program;
     cmd.addVariable("RUNNER", par.runner.c_str());
 //    cmd.addVariable("ALIGNMENT_DB_EXT", Parameters::isEqualDbtype(targetDbType, Parameters::DBTYPE_PROFILE_STATE_SEQ) ? ".255" : "");
     par.filenames[1] = targetDB;
     if (par.sliceSearch == true) {
-
         // By default (0), diskSpaceLimit (in bytes) will be set in the workflow to use as much as possible
         cmd.addVariable("AVAIL_DISK", SSTR(static_cast<size_t>(par.diskSpaceLimit)).c_str());
 
@@ -317,11 +330,17 @@ int search(int argc, const char **argv, const Command& command) {
         par.maxResListLen = INT_MAX;
         cmd.addVariable("PREFILTER_PAR", par.createParameterString(par.prefilter).c_str());
         par.maxResListLen = maxResListLen;
-        float originalEvalThr = par.evalThr;
-        par.evalThr = std::numeric_limits<float>::max();
+        double originalEvalThr = par.evalThr;
+        par.evalThr = std::numeric_limits<double>::max();
         cmd.addVariable("SWAP_PAR", par.createParameterString(par.swapresult).c_str());
         par.evalThr = originalEvalThr;
-        cmd.addVariable("ALIGNMENT_PAR", par.createParameterString(par.align).c_str());
+        if (isUngappedMode) {
+            par.rescoreMode = Parameters::RESCORE_MODE_ALIGNMENT;
+            cmd.addVariable("ALIGNMENT_PAR", par.createParameterString(par.rescorediagonal).c_str());
+            par.rescoreMode = originalRescoreMode;
+        } else {
+            cmd.addVariable("ALIGNMENT_PAR", par.createParameterString(par.align).c_str());
+        }
         cmd.addVariable("SORTRESULT_PAR", par.createParameterString(par.sortresult).c_str());
         par.covMode = originalCovMode;
 
@@ -351,7 +370,7 @@ int search(int argc, const char **argv, const Command& command) {
         cmd.addVariable("SUBSTRACT_PAR", par.createParameterString(par.subtractdbs).c_str());
         cmd.addVariable("VERBOSITY_PAR", par.createParameterString(par.onlyverbosity).c_str());
 
-        float originalEval = par.evalThr;
+        double originalEval = par.evalThr;
         par.evalThr = (par.evalThr < par.evalProfile) ? par.evalThr  : par.evalProfile;
         for (int i = 0; i < par.numIterations; i++) {
             if (i == 0 && (searchMode & Parameters::SEARCH_MODE_FLAG_TARGET_PROFILE) == false) {

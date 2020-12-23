@@ -4,6 +4,7 @@
 #include "FileUtil.h"
 #include "Debug.h"
 #include "Util.h"
+#include "Matcher.h"
 #include <algorithm>
 
 #ifdef OPENMP
@@ -14,7 +15,7 @@ static bool compareToFirstInt(const std::pair<unsigned int, unsigned int>& lhs, 
     return (lhs.first <= rhs.first);
 }
 
-int lca(int argc, const char **argv, const Command& command) {
+int dolca(int argc, const char **argv, const Command& command, bool majority) {
     Parameters& par = Parameters::getInstance();
     par.parseParameters(argc, argv, command, true, 0, 0);
     NcbiTaxonomy * t = NcbiTaxonomy::openTaxonomy(par.db1);
@@ -64,8 +65,8 @@ int lca(int argc, const char **argv, const Command& command) {
     #pragma omp parallel
     {
         const char *entry[255];
-        std::string resultData;
-        resultData.reserve(4096);
+        std::string result;
+        result.reserve(4096);
         unsigned int thread_idx = 0;
 
 #ifdef OPENMP
@@ -81,6 +82,7 @@ int lca(int argc, const char **argv, const Command& command) {
             size_t length = reader.getEntryLen(i);
 
             std::vector<int> taxa;
+            std::vector<WeightedTaxHit> weightedTaxa;
             while (*data != '\0') {
                 TaxID taxon;
                 unsigned int id;
@@ -117,7 +119,25 @@ int lca(int argc, const char **argv, const Command& command) {
                 }
 
                 if (isBlacklisted == false) {
-                    taxa.emplace_back(taxon);
+                    if (majority) {
+                        float weight = FLT_MAX;
+                        if (par.voteMode == Parameters::AGG_TAX_MINUS_LOG_EVAL) {
+                            if (columns <= 3) {
+                                Debug(Debug::ERROR) << "No alignment result for taxon " << taxon << " found\n";
+                                EXIT(EXIT_FAILURE);
+                            }
+                            weight = strtod(entry[3], NULL);
+                        } else if (par.voteMode == Parameters::AGG_TAX_SCORE) {
+                            if (columns <= 1) {
+                                Debug(Debug::ERROR) << "No alignment result for taxon " << taxon << " found\n";
+                                EXIT(EXIT_FAILURE);
+                            }
+                            weight = strtod(entry[1], NULL);
+                        }
+                        weightedTaxa.emplace_back(taxon, weight, par.voteMode);
+                    } else {
+                        taxa.emplace_back(taxon);
+                    }
                 }
             }
 
@@ -126,28 +146,40 @@ int lca(int argc, const char **argv, const Command& command) {
                 continue;
             }
 
-            TaxonNode const * node = t->LCA(taxa);
+            TaxonNode const * node = NULL;
+            if (majority) {
+                WeightedTaxResult result = t->weightedMajorityLCA(weightedTaxa, par.majorityThr);
+                node = t->taxonNode(result.taxon, false);
+            } else {
+                node = t->LCA(taxa);
+            }
             if (node == NULL) {
                 writer.writeData(noTaxResult.c_str(), noTaxResult.size(), key, thread_idx);
                 continue;
             }
 
-            resultData = SSTR(node->taxId) + '\t' + node->rank + '\t' + node->name;
+            result.append(SSTR(node->taxId));
+            result.append(1, '\t');
+            result.append(t->getString(node->rankIdx));
+            result.append(1, '\t');
+            result.append(t->getString(node->nameIdx));
             if (!ranks.empty()) {
-                std::string lcaRanks = Util::implode(t->AtRanks(node, ranks), ';');
-                resultData += '\t' + lcaRanks;
+                result.append(1, '\t');
+                result.append(Util::implode(t->AtRanks(node, ranks), ';'));
             }
             if (par.showTaxLineage == 1) {
-                resultData += '\t' + t->taxLineage(node, true);
+                result.append(1, '\t');
+                result.append(t->taxLineage(node, true));
             }
             if (par.showTaxLineage == 2) {
-                resultData += '\t' + t->taxLineage(node, false);
+                result.append(1, '\t');
+                result.append(t->taxLineage(node, false));
             }
-            resultData += '\n';
-            writer.writeData(resultData.c_str(), resultData.size(), key, thread_idx);
-            resultData.clear();
+            result.append(1, '\n');
+            writer.writeData(result.c_str(), result.size(), key, thread_idx);
+            result.clear();
         }
-    };
+    }
     Debug(Debug::INFO) << "\n";
     Debug(Debug::INFO) << "Taxonomy for " << taxonNotFound << " out of " << taxonNotFound+found << " entries not found\n";
     writer.close();
@@ -156,4 +188,12 @@ int lca(int argc, const char **argv, const Command& command) {
     delete[] taxaBlacklist;
 
     return EXIT_SUCCESS;
+}
+
+int lca(int argc, const char **argv, const Command& command) {
+    return dolca(argc, argv, command, false);
+}
+
+int majoritylca(int argc, const char **argv, const Command& command) {
+    return dolca(argc, argv, command, true);
 }

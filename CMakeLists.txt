@@ -43,19 +43,7 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
 endif ()
 
 # see https://wiki.debian.org/ArchitectureSpecificsMemo for char signedness
-
-set(MMSEQS_CXX_FLAGS "-std=c++1y -fsigned-char")
-if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm.*|ARM.*|aarch64.*|AARCH64.*)")
-    set(ARM 1)
-elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "PPC64*|ppc64*|powerpc64*")
-    set(PPC64 1)
-elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "amd64|AMD64")
-    set(X64 1)
-elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "x86|X86")
-    set(X86 1)
-else ()
-    message(WARNING "CPU without native SIMD instructions. Performance will be bad.")
-endif ()
+set(MMSEQS_CXX_FLAGS "-fsigned-char")
 
 # SIMD instruction sets support
 set(MMSEQS_ARCH "")
@@ -65,20 +53,37 @@ if (HAVE_AVX2)
     else ()
         set(MMSEQS_ARCH "${MMSEQS_ARCH} -mavx2 -mcx16 -Wa,-q")
     endif ()
+    set(X64 1)
 elseif (HAVE_SSE4_1)
     set(MMSEQS_ARCH "${MMSEQS_ARCH} -msse4.1 -mcx16")
+    set(X64 1)
 elseif (HAVE_SSE2)
     set(MMSEQS_ARCH "${MMSEQS_ARCH} -msse2")
     set(DISABLE_IPS4O 1)
+    set(X64 1)
 elseif (HAVE_POWER9)
     set(MMSEQS_ARCH "${MMSEQS_ARCH} -mcpu=power9 -mvsx")
+    set(PPC64 1)
 elseif (HAVE_POWER8)
     set(MMSEQS_ARCH "${MMSEQS_ARCH} -mcpu=power8 -mvsx")
+    set(PPC64 1)
 elseif (HAVE_ARM8)
     set(MMSEQS_ARCH "${MMSEQS_ARCH} -march=armv8-a+simd")
+    set(ARM 1)
 endif ()
 
 if (NATIVE_ARCH AND (MMSEQS_ARCH STREQUAL ""))
+    if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm.*|ARM.*|aarch64.*|AARCH64.*)")
+        set(ARM 1)
+    elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "PPC64*|ppc64*|powerpc64*")
+        set(PPC64 1)
+    elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "amd64|AMD64")
+        set(X64 1)
+    elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "x86|X86")
+        set(X86 1)
+    else ()
+        message(WARNING "CPU without native SIMD instructions. Performance will be bad.")
+    endif ()
     if (EMSCRIPTEN)
         set(MMSEQS_ARCH "-msimd128 -s WASM=1 -s ASSERTIONS=1")
     elseif (X86 OR X64)
@@ -116,13 +121,6 @@ if (CYGWIN OR ARM OR PPC64)
     set(MMSEQS_CXX_FLAGS "${MMSEQS_CXX_FLAGS} -D_GNU_SOURCE=1")
 endif ()
 
-# Compiler-specific features
-if (CMAKE_COMPILER_IS_CLANG AND (NOT EMSCRIPTEN))
-    set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11")
-    set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
-    set(MMSEQS_CXX_FLAGS "${MMSEQS_CXX_FLAGS} -stdlib=libc++")
-endif ()
-
 if (CMAKE_COMPILER_IS_ICC)
     # default -fp-model results in inconsistent results in profile search
     set(MMSEQS_CXX_FLAGS "${MMSEQS_CXX_FLAGS} -fp-model precise")
@@ -158,6 +156,16 @@ if (PPC64)
     set(DISABLE_IPS4O 1)
 endif ()
 
+set(MMSEQS_C_FLAGS "${MMSEQS_CXX_FLAGS}")
+set(MMSEQS_CXX_FLAGS "${MMSEQS_CXX_FLAGS} -std=c++1y")
+# Compiler-specific features
+if (CMAKE_COMPILER_IS_CLANG AND (NOT EMSCRIPTEN))
+    set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11")
+    set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
+    set(MMSEQS_CXX_FLAGS "${MMSEQS_CXX_FLAGS} -stdlib=libc++")
+endif ()
+
+
 # zstd
 # We use ZSTD_findDecompressedSize which is only available with ZSTD_STATIC_LINKING_ONLY
 # Thus we cannot use a system provided libzstd
@@ -173,6 +181,7 @@ option(ZSTD_BUILD_CONTRIB "BUILD CONTRIB" OFF)
 option(ZSTD_BUILD_TESTS "BUILD TESTS" OFF)
 include_directories(lib/zstd/lib)
 add_subdirectory(lib/zstd/build/cmake/lib EXCLUDE_FROM_ALL)
+set_target_properties(libzstd_static PROPERTIES COMPILE_FLAGS "${MMSEQS_C_FLAGS}" LINK_FLAGS "${MMSEQS_C_FLAGS}")
 
 # tinyexpr
 include_directories(lib/tinyexpr)
