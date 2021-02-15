@@ -158,9 +158,10 @@ class ExonFinder{
 
     Matcher::result_t stpCodonExtension(Matcher::result_t inputExon){
 //        std::cout<<inputExon.dbEndPos<<"\t";
-        size_t lenSTPCodon = inputExon.qStartPos < inputExon.qEndPos ? 3 : -3;
+        size_t lenSTPCodon = inputExon.dbStartPos < inputExon.dbEndPos ? 3 : -3;
         bool haveSTPCodon = inputExon.qEndPos == inputExon.queryOrfEndPos;
         inputExon.dbEndPos = haveSTPCodon ? (inputExon.dbEndPos + lenSTPCodon) : inputExon.dbEndPos;
+//        std::cout<<inputExon.qStartPos << "\t" << inputExon.qEndPos << lenSTPCodon << "\t";
 //        std::cout<<inputExon.dbEndPos<<"\n";
         return inputExon;
     }
@@ -634,7 +635,7 @@ int findexons(int argc, const char **argv, const Command &command) {
 
                     size_t len = Matcher::resultToBuffer(buffer, optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx], true, false, true);
                     resultWriter.writeAdd(buffer, len, thread_idx);//result buffer, len, thread_idx
-//                    if (queryKey == 3){
+//                    if (queryKey == 102){
 //                        std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size() -
 //                                                              1].candidates[optIdx].dbStartPos + 1 << "_" <<
 //                                  optimalSolutionWithScore[optimalSolutionWithScore.size() -
