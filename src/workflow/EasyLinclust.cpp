@@ -69,12 +69,17 @@ int easylinclust(int argc, const char **argv, const Command &command) {
     cmd.addVariable("RESULTS", par.filenames.back().c_str());
     par.filenames.pop_back();
     cmd.addVariable("REMOVE_TMP", par.removeTmpFiles ? "TRUE" : NULL);
-
     cmd.addVariable("RUNNER", par.runner.c_str());
     cmd.addVariable("CREATEDB_PAR", par.createParameterString(par.createdb).c_str());
+//    cmd.addVariable("CREATEDB_PAR", "--dbtype 0 --shuffle 0 --createdb-mode 1 --write-lookup 0 --id-offset 0 --compressed 0 -v 3");
     cmd.addVariable("CLUSTER_PAR", par.createParameterString(par.linclustworkflow, true).c_str());
     cmd.addVariable("CLUSTER_MODULE", "linclust");
+//    int orgThreadCnt = par.threads;
+//    par.threads = 1;
+//    cmd.addVariable("RESULT2REPSEQ_PAR", ..oldCode..);
+//    par.threads = orgThreadCnt;
     cmd.addVariable("RESULT2REPSEQ_PAR", par.createParameterString(par.result2repseq).c_str());
+//    cmd.addVariable("RESULT2REPSEQ_PAR", " --db-load-mode 0 --compressed 0 --threads 1 -v 3 ");
     cmd.addVariable("THREADS_PAR", par.createParameterString(par.onlythreads).c_str());
     cmd.addVariable("VERBOSITY_PAR", par.createParameterString(par.onlyverbosity).c_str());
 

@@ -126,15 +126,14 @@ class ExonFinder{
                         break;
                     }
                 }
-
                 if(isBestScore&&dpMatrixRow.size()>0){
                     orfScore = bestPathScore;
                     optimalExonSolution.clear();
                     while (dpMatrixRow[currId].prevPotentialId != currId) {
-                        optimalExonSolution.emplace_back(trimmedExonResult[currId]);
+                        optimalExonSolution.emplace_back(stpCodonExtension(trimmedExonResult[currId]));
                         currId = dpMatrixRow[currId].prevPotentialId;
                     }
-                    optimalExonSolution.emplace_back(trimmedExonResult[currId]);
+                    optimalExonSolution.emplace_back(stpCodonExtension(trimmedExonResult[currId]));
                     std::sort(optimalExonSolution.begin(),optimalExonSolution.end(),Matcher::compareHitsByPosAndStrand);
                     candidate.score = bestPathScore;
                     dpMatrixRow.clear();
@@ -156,6 +155,13 @@ class ExonFinder{
     std::vector<DpMatrixRow> dpMatrixRow;
 
     typedef std::pair<char, int> cigarTuple;
+
+    Matcher::result_t stpCodonExtension(Matcher::result_t inputExon){
+        size_t lenSTPCodon = inputExon.qStartPos < inputExon.qEndPos ? 3 : -3;
+        bool haveSTPCodon = inputExon.qEndPos == inputExon.queryOrfEndPos;
+        inputExon.dbEndPos = haveSTPCodon ? (inputExon.dbEndPos + lenSTPCodon) : inputExon.dbEndPos;
+        return inputExon;
+    }
 
     std::vector<ExonCandidates> createPotentialExonCombinations(std::vector<Matcher::result_t> exonPath){
         std::vector<ExonCandidates> exonCombination;
