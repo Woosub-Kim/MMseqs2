@@ -66,9 +66,10 @@ class ExonFinder{
                     bool isFirstExon = trimmedExonResult[id].queryOrfStartPos==trimmedExonResult[id].qStartPos;
                     bool metStp = trimmedExonResult[id].qEndPos>trimmedExonResult[id].queryOrfEndPos;
                     int cost1 = metStp? COST_MAX : 0;
-                    int score1 = isFirstExon ? queryOrfLength(trimmedExonResult[id])*0.1 : 0;
+//                    int score1 = isFirstExon ? queryOrfLength(trimmedExonResult[id])*0.1 : 0;
                     int score2 = queryLength(trimmedExonResult[id]) * trimmedExonResult[id].seqId;
-                    long score = score1 + score2 - cost1;
+//                    long score = score1 + score2 - cost1;
+                    long score = score2 - cost1;
                     dpMatrixRow.emplace_back(DpMatrixRow(id,score));
                 }
                 long bestPathScore = INT_MIN;
@@ -88,15 +89,18 @@ class ExonFinder{
                         bool isNotTooLongIntron = (intronLength < INTRON_MAX);
                         bool isNotTooShortIntron = intronLength > INTRON_MIN;
                         bool sameOrf = prevExon==0 || (trimmedExonResult[currExon].qStartPos - trimmedExonResult[prevExon].qEndPos)%3==1;
-                        if (isNotTooLongIntron && isNotTooShortIntron && sameOrf){
+                        bool notMetStp = trimmedExonResult[currExon].qEndPos <= trimmedExonResult[currExon].queryOrfEndPos;
+                        bool isGoingForward = trimmedExonResult[currExon].qStartPos > trimmedExonResult[prevExon].qEndPos ;
+//                        bool isGoingForward = trimmedExonResult[prevExon].qEndPos != trimmedExonResult[prevExon].queryOrfEndPos ;
+                        if (isNotTooLongIntron && isNotTooShortIntron  && notMetStp && isGoingForward){ //&& sameOrf
 //                            int exonGap = std::abs(trimmedExonResult[currExon].qStartPos - trimmedExonResult[prevExon].qEndPos -1)*10;
 //                            int cost1 = std::min(exonGap, COST_MAX); // DO WE NEED THIS?
                             int cost2 = trimmedExonResult[currExon].qEndPos>trimmedExonResult[currExon].queryOrfEndPos ? COST_MAX : 0;
                             int score1 = queryLength(trimmedExonResult[currExon])*trimmedExonResult[currExon].seqId;
-                            int score2 = (trimmedExonResult[currExon].qEndPos == trimmedExonResult[currExon].queryOrfEndPos) ? queryOrfLength(trimmedExonResult[currExon])*0.1 : 0;
+//                            int score2 = (trimmedExonResult[currExon].qEndPos == trimmedExonResult[currExon].queryOrfEndPos) ? queryOrfLength(trimmedExonResult[currExon])*0.1 : 0;
                             long bestScorePrev = dpMatrixRow[prevExon].pathScore;
 //                            long currScoreWithPrev = bestScorePrev + score1  - cost2 - cost1 + score2;
-                            long currScoreWithPrev = bestScorePrev + score1  - cost2 + score2;
+                            long currScoreWithPrev = bestScorePrev + score1  - cost2;
                             // update row of currPotentialExon in case of improvement:
                             if (currScoreWithPrev > dpMatrixRow[currExon].pathScore  ) {
                                 dpMatrixRow[currExon].prevPotentialId = prevExon;
