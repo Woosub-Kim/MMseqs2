@@ -148,7 +148,7 @@ class ExonFinder{
     private:
     // class variable
     const int INTRON_MAX = 500000;
-    const int INTRON_MIN = 20;
+    const int INTRON_MIN = 30;
     const int COST_MAX = 5000;
     IndexReader * tDbr;
     IndexReader * qDbr;
