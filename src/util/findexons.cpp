@@ -423,7 +423,7 @@ class ExonFinder{
             std::vector<Matcher::result_t> & tempExonVec,
             unsigned int thread_idx){
 
-        int standardInScope = 100;
+        int standardInScope = 30;
         int standardOutScope = 2;
         int inScope;
         int outScope;
