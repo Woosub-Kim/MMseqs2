@@ -493,13 +493,40 @@ class ExonFinder{
                 outScope = 0;
             }
             else if(tempExonVec[trimmedExon].queryOrfEndPos - tempExonVec[trimmedExon].qEndPos < 15){
+//                bool isStpCodonF(char * targetSeq, int index){
+//                    char nt1 = std::toupper(targetSeq[index]);
+//                    char nt2 = std::toupper(targetSeq[index+1]);
+//                    char nt3 = std::toupper(targetSeq[index+2]);
+//                    return  (nt1=='T'&&nt2=='G'&&nt3=='A') || (nt1=='T'&&nt2=='A'&&nt3=='A') || (nt1=='T'&&nt2=='A'&&nt3=='G');
+//                }
+//                bool isStpCodonR(char * targetSeq, int index){
+//                    char nt1 = std::toupper(targetSeq[index]);
+//                    char nt2 = std::toupper(targetSeq[index+1]);
+//                    char nt3 = std::toupper(targetSeq[index+2]);
+//                    return  (nt1=='T'&&nt2=='T'&&nt3=='A') || (nt1=='T'&&nt2=='C'&&nt3=='A')|| (nt1=='C'&&nt2=='T'&&nt3=='A');
+//                }
                 int residueLength = tempExonVec[trimmedExon].queryOrfEndPos - tempExonVec[trimmedExon].qEndPos;
                 int endPos = tempExonVec[trimmedExon].qEndPos;
+                int dbEndPos = tempExonVec[trimmedExon].dbEndPos;
                 if(isForward){
-                    std::cout<<targetSeq[endPos+residueLength+1] << targetSeq[endPos+residueLength+2] << targetSeq[endPos+residueLength+3]<<std::endl;
+//                    std::cout<<targetSeq[endPos+residueLength+1] << targetSeq[endPos+residueLength+2] << targetSeq[endPos+residueLength+3]<<std::endl;
+                    for (int dbPos=dbEndPos; dbPos<dbEndPos+50; dbPos++){
+                        if (isStpCodonF(targetSeq, dbPos)){
+                            tempExonVec[trimmedExon].dbEndPos = dbPos;
+                            trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
+                            outScope = 0;
+                        }
+                    }
                 }
                 else{
-                    std::cout<<targetSeq[endPos-residueLength-1] << targetSeq[endPos-residueLength-2] << targetSeq[endPos-residueLength-3]<<std::endl;
+//                    std::cout<<targetSeq[endPos-residueLength-1] << targetSeq[endPos-residueLength-2] << targetSeq[endPos-residueLength-3]<<std::endl;
+                    for (int dbPos=dbEndPos; dbPos>dbEndPos-50; dbPos--){
+                        if (isStpCodonR(targetSeq, dbPos)){
+                            tempExonVec[trimmedExon].dbEndPos = dbPos;
+                            trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
+                            outScope = 0;
+                        }
+                    }
                 }
             }
             float matchIdentity = tempExonVec[trimmedExon].seqId/matchRatio(tempExonVec[trimmedExon].backtrace);
