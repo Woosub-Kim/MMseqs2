@@ -477,8 +477,13 @@ class ExonFinder{
             inScope = std::min( (int)(dbLength(tempExonVec[trimmedExon])*0.7), standardInScope);
             outScope = standardOutScope;
             if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos){
-                trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
-                outScope = 0;
+                trimmedExonResult.emplace_back(tempExonVec[trimm{
+            }
+            else if(tempExonVec[trimmedExon].queryOrfEndPos - tempExonVec[trimmedExon].qEndPos < 15){
+                std::cout << tempExonVec[trimmedExon].qStartPos << "\t" << tempExonVec[trimmedExon].qEndPos << "\t";
+                std::cout << tempExonVec[trimmedExon].dbStartPos+1 << "\t" << tempExonVec[trimmedExon].dbEndPos+1 << "\t";
+                std::cout << tempExonVec[trimmedExon].queryOrfStartPos << "\t" << tempExonVec[trimmedExon].queryOrfEndPos << "\t";
+                std::cout << tempExonVec[trimmedExon].seqId<< "\t" << tempExonVec[trimmedExon].backtrace<< "\n";
             }
             float matchIdentity = tempExonVec[trimmedExon].seqId/matchRatio(tempExonVec[trimmedExon].backtrace);
             if(isForward){
