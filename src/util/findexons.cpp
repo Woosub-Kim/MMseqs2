@@ -477,7 +477,8 @@ class ExonFinder{
             inScope = std::min( (int)(dbLength(tempExonVec[trimmedExon])*0.7), standardInScope);
             outScope = standardOutScope;
             if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos){
-                trimmedExonResult.emplace_back(tempExonVec[trimm{
+                trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
+                outScope = 0;
             }
             else if(tempExonVec[trimmedExon].queryOrfEndPos - tempExonVec[trimmedExon].qEndPos < 15){
                 std::cout << tempExonVec[trimmedExon].qStartPos << "\t" << tempExonVec[trimmedExon].qEndPos << "\t";
