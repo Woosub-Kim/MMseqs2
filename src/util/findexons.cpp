@@ -434,10 +434,32 @@ class ExonFinder{
             outScope = standardOutScope;
             inScope = std::min((int)(dbLength(exonPath[exon])*0.7), standardInScope);
             float matchIdentity = exonPath[exon].seqId / matchRatio(exonPath[exon].backtrace);
+            std::cout<<exonPath[exon].queryOrfStartPos<<std::endl;
             if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos){
                 tempExonVec.emplace_back(exonPath[exon]);
                 outScope = 0;
-            }
+//            } else if(exonPath[exon].queryOrfStartPos - exonPath[exon].qStartPos < 30){
+//                int residueLength = tempExonVec[trimmedExon].queryOrfEndPos - tempExonVec[trimmedExon].qEndPos;
+//                int dbEndPos = tempExonVec[trimmedExon].dbEndPos;
+//                if(isForward){
+//                    for (int dbPos=dbEndPos; dbPos<dbEndPos+50; dbPos++){
+//                        if (isStpCodonF(targetSeq, dbPos)){
+//                            tempExonVec[trimmedExon].dbEndPos = dbPos;
+//                            trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
+//                            outScope = 0;
+//                        }
+//                    }
+//                }
+//                else{
+//                    for (int dbPos=dbEndPos; dbPos>dbEndPos-50; dbPos--){
+//                        if (isStpCodonR(targetSeq, dbPos)){
+//                            tempExonVec[trimmedExon].dbEndPos = dbPos;
+//                            trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
+//                            outScope = 0;
+//                        }
+//                    }
+//                }
+//            }
 
             //find AG
             if (isForward) {
