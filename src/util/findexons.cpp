@@ -451,7 +451,6 @@ class ExonFinder{
                 tempExonVec.emplace_back(exonPath[exon]);
                 outScope = 0;
             } else if(0 < exonPath[exon].qStartPos < 30){
-                int residueLength = exonPath[exon].queryStartPos;
                 int dbStartPos = exonPath[exon].dbStartPos;
                 if(isForward){
                     for (int dbPos=dbStartPos; dbPos>dbStartPos-50; dbPos--){
@@ -527,7 +526,6 @@ class ExonFinder{
                 outScope = 0;
             }
             else if(tempExonVec[trimmedExon].queryOrfEndPos - tempExonVec[trimmedExon].qEndPos < 30){
-                int residueLength = tempExonVec[trimmedExon].queryOrfEndPos - tempExonVec[trimmedExon].qEndPos;
                 int dbEndPos = tempExonVec[trimmedExon].dbEndPos;
                 if(isForward){
                     for (int dbPos=dbEndPos; dbPos<dbEndPos+50; dbPos++){
