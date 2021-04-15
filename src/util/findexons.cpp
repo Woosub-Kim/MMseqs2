@@ -238,18 +238,29 @@ class ExonFinder{
         return (nt1=='A' && nt2=='C') || (nt1=='G' && nt2=='C');
     }
     bool isStpCodonF(char * targetSeq, int index){
-        char nt1 = std::toupper(targetSeq[index]);
-        char nt2 = std::toupper(targetSeq[index+1]);
-        char nt3 = std::toupper(targetSeq[index+2]);
+        char nt1 = std::toupper(targetSeq[index+1]);
+        char nt2 = std::toupper(targetSeq[index+2]);
+        char nt3 = std::toupper(targetSeq[index+3]);
         return  (nt1=='T'&&nt2=='G'&&nt3=='A') || (nt1=='T'&&nt2=='A'&&nt3=='A') || (nt1=='T'&&nt2=='A'&&nt3=='G');
     }
     bool isStpCodonR(char * targetSeq, int index){
+        char nt1 = std::toupper(targetSeq[index-3]);
+        char nt2 = std::toupper(targetSeq[index-2]);
+        char nt3 = std::toupper(targetSeq[index-2]);
+        return  (nt1=='T'&&nt2=='T'&&nt3=='A') || (nt1=='T'&&nt2=='C'&&nt3=='A')|| (nt1=='C'&&nt2=='T'&&nt3=='A');
+    }
+    bool isMetCodonF(char * targetSeq, int index){
         char nt1 = std::toupper(targetSeq[index]);
         char nt2 = std::toupper(targetSeq[index+1]);
         char nt3 = std::toupper(targetSeq[index+2]);
-        return  (nt1=='T'&&nt2=='T'&&nt3=='A') || (nt1=='T'&&nt2=='C'&&nt3=='A')|| (nt1=='C'&&nt2=='T'&&nt3=='A');
+        return (nt1=='A'&&nt2=='T'&&nt3=='G');
     }
-
+    bool isMetCodonR(char * targetSeq, int index){
+        char nt1 = std::toupper(targetSeq[index-2]);
+        char nt2 = std::toupper(targetSeq[index-1]);
+        char nt3 = std::toupper(targetSeq[index]);
+        return (nt1=='C'&&nt2=='A'&&nt3=='T');
+    }
     // to build target and query sequence
     char * targetSequence(unsigned int dbKey, unsigned int thread_idx){
         size_t targetId = tDbr->sequenceReader->getId(dbKey);
@@ -439,27 +450,27 @@ class ExonFinder{
             if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos){
                 tempExonVec.emplace_back(exonPath[exon]);
                 outScope = 0;
-//            } else if(exonPath[exon].queryOrfStartPos - exonPath[exon].qStartPos < 30){
-//                int residueLength = tempExonVec[trimmedExon].queryOrfEndPos - tempExonVec[trimmedExon].qEndPos;
-//                int dbEndPos = tempExonVec[trimmedExon].dbEndPos;
-//                if(isForward){
-//                    for (int dbPos=dbEndPos; dbPos<dbEndPos+50; dbPos++){
-//                        if (isStpCodonF(targetSeq, dbPos)){
-//                            tempExonVec[trimmedExon].dbEndPos = dbPos;
-//                            trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
-//                            outScope = 0;
-//                        }
-//                    }
-//                }
-//                else{
-//                    for (int dbPos=dbEndPos; dbPos>dbEndPos-50; dbPos--){
-//                        if (isStpCodonR(targetSeq, dbPos)){
-//                            tempExonVec[trimmedExon].dbEndPos = dbPos;
-//                            trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
-//                            outScope = 0;
-//                        }
-//                    }
-//                }
+            } else if(0 < exonPath[exon].qStartPos < 30){
+                int residueLength = exonPath[exon].queryStartPos;
+                int dbStartPos = exonPath[exon].dbStartPos;
+                if(isForward){
+                    for (int dbPos=dbStartPos; dbPos>dbStartPos-50; dbPos--){
+                        if (isMetCodonF(targetSeq, dbPos)){
+                            exonPath[exon].dbStartPos = dbPos;
+                            tempExonVec.emplace_back(exonPath[exon]);
+                            outScope = 0;
+                        }
+                    }
+                }
+                else{
+                    for (int dbPos=dbStartPos; dbPos<dbStartPos+50; dbPos++){
+                        if (isMetCodonR(targetSeq, dbPos)){
+                            exonPath[exon].dbStartPos = dbPos;
+                            tempExonVec.emplace_back(exonPath[exon]);
+                            outScope = 0;
+                        }
+                    }
+                }
             }
 
             //find AG
