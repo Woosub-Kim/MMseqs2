@@ -459,7 +459,7 @@ class ExonFinder{
 //                        }
 //                    }
 //                }
-//            }
+            }
 
             //find AG
             if (isForward) {
