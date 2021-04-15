@@ -450,7 +450,7 @@ class ExonFinder{
             if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos){
                 tempExonVec.emplace_back(exonPath[exon]);
                 outScope = 0;
-            } else if(0 < exonPath[exon].qStartPos < 30){
+            } else if(0 < exonPath[exon].qStartPos && exonPath[exon].qStartPos < 30){
                 int dbStartPos = exonPath[exon].dbStartPos;
                 if(isForward){
                     for (int dbPos=dbStartPos; dbPos>dbStartPos-50; dbPos--){
