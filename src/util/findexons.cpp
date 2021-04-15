@@ -448,7 +448,7 @@ class ExonFinder{
             if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos){
                 tempExonVec.emplace_back(exonPath[exon]);
                 outScope = 0;
-            } else if(0 < exonPath[exon].qStartPos && exonPath[exon].qStartPos < 30){
+            } else if(exonPath[exon].qStartPos-0<30){
                 int dbStartPos = exonPath[exon].dbStartPos;
                 if(isForward){
                     for (int dbPos=dbStartPos; dbPos>dbStartPos-50; dbPos--){
@@ -538,6 +538,7 @@ class ExonFinder{
                     for (int dbPos=dbEndPos; dbPos>dbEndPos-50; dbPos--){
                         if (isStpCodonR(targetSeq, dbPos)){
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
+                            tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
                             trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
                             outScope = 0;
                         }
