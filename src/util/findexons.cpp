@@ -445,10 +445,11 @@ class ExonFinder{
             outScope = standardOutScope;
             inScope = std::min((int)(dbLength(exonPath[exon])*0.7), standardInScope);
             float matchIdentity = exonPath[exon].seqId / matchRatio(exonPath[exon].backtrace);
-            if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos){
-                tempExonVec.emplace_back(exonPath[exon]);
-                outScope = 0;
-            } else if(exonPath[exon].qStartPos-0<30){
+//            if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos){
+//                tempExonVec.emplace_back(exonPath[exon]);
+//                outScope = 0;
+//            } else if(exonPath[exon].qStartPos-0<30){
+            if(exonPath[exon].qStartPos<30){
                 int dbStartPos = exonPath[exon].dbStartPos;
                 if(isForward){
                     for (int dbPos=dbStartPos; dbPos>dbStartPos-50; dbPos--){
@@ -519,11 +520,12 @@ class ExonFinder{
             bool isForward = tempExonVec[trimmedExon].dbStartPos < tempExonVec[trimmedExon].dbEndPos;
             inScope = std::min( (int)(dbLength(tempExonVec[trimmedExon])*0.7), standardInScope);
             outScope = standardOutScope;
-            if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos){
-                trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
-                outScope = 0;
-            }
-            else if(tempExonVec[trimmedExon].queryOrfEndPos - tempExonVec[trimmedExon].qEndPos < 30){
+//            if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos){
+//                trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
+//                outScope = 0;
+//            }
+//            else if(tempExonVec[trimmedExon].queryOrfEndPos - tempExonVec[trimmedExon].qEndPos < 30){
+            if(tempExonVec[trimmedExon].queryOrfEndPos - tempExonVec[trimmedExon].qEndPos < 30){
                 int dbEndPos = tempExonVec[trimmedExon].dbEndPos;
                 if(isForward){
                     for (int dbPos=dbEndPos; dbPos<dbEndPos+50; dbPos++){
