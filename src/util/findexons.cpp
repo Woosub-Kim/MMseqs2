@@ -448,7 +448,7 @@ class ExonFinder{
             if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos){
                 tempExonVec.emplace_back(exonPath[exon]);
                 outScope = 0;
-                if !isMetCodonF(targetSeq, exonPath[exon].dbStartPos) && !isMetCodonR(targetSeq, exonPath[exon].dbStartPos)
+                if (!isMetCodonF(targetSeq, exonPath[exon].dbStartPos) && !isMetCodonR(targetSeq, exonPath[exon].dbStartPos))
                     std::cout<<queryKey<<"\t"<<exonPath[exon].dbKey<<std::endl;
             } else if(exonPath[exon].qStartPos-0<30){
 //            if(exonPath[exon].qStartPos<exonPath[exon].queryOrfStartPos+30){
@@ -525,7 +525,7 @@ class ExonFinder{
             if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos){
                 trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
                 outScope = 0;
-                if !isStpCodonF(targetSeq, tempExonVec[trimmedExon].dbEndPos) && !isStpCodonR(targetSeq, tempExonVec[trimmedExon].dbEndPos)
+                if (!isStpCodonF(targetSeq, tempExonVec[trimmedExon].dbEndPos) && !isStpCodonR(targetSeq, tempExonVec[trimmedExon].dbEndPos))
                     std::cout<<queryKey<<"\t"<<trimmedExonResult[trimmedExon].dbKey<<std::endl;
             }
             else if(tempExonVec[trimmedExon].queryOrfEndPos - tempExonVec[trimmedExon].qEndPos < 30){
