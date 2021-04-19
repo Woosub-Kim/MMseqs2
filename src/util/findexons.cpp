@@ -97,10 +97,10 @@ class ExonFinder{
 //                            int cost1 = std::min(exonGap, COST_MAX); // DO WE NEED THIS?
                             int cost2 = trimmedExonResult[currExon].qEndPos>trimmedExonResult[currExon].queryOrfEndPos ? COST_MAX : 0;
                             int score1 = queryLength(trimmedExonResult[currExon])*trimmedExonResult[currExon].seqId;
-//                            int score2 = (trimmedExonResult[currExon].qEndPos == trimmedExonResult[currExon].queryOrfEndPos) ? queryOrfLength(trimmedExonResult[currExon])*0.1 : 0;
+                            int score2 = sameOrf ? queryLength(trimmedExonResult[currExon])*0.1:0;
                             long bestScorePrev = dpMatrixRow[prevExon].pathScore;
 //                            long currScoreWithPrev = bestScorePrev + score1  - cost2 - cost1 + score2;
-                            long currScoreWithPrev = bestScorePrev + score1  - cost2;
+                            long currScoreWithPrev = bestScorePrev + score1  - cost2 + score2;
                             // update row of currPotentialExon in case of improvement:
                             if (currScoreWithPrev > dpMatrixRow[currExon].pathScore  ) {
                                 dpMatrixRow[currExon].prevPotentialId = prevExon;
@@ -525,29 +525,6 @@ class ExonFinder{
                 trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
                 outScope = 0;
             }
-//            else if(tempExonVec[trimmedExon].queryOrfEndPos - tempExonVec[trimmedExon].qEndPos < 30){
-////            if(tempExonVec[trimmedExon].queryOrfEndPos - tempExonVec[trimmedExon].qEndPos < 30){
-//                int dbEndPos = tempExonVec[trimmedExon].dbEndPos;
-//                if(isForward){
-//                    for (int dbPos=dbEndPos; dbPos<dbEndPos+50; dbPos++){
-//                        if (isStpCodonF(targetSeq, dbPos)){
-//                            tempExonVec[trimmedExon].dbEndPos = dbPos;
-//                            trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
-//                            outScope = 0;
-//                        }
-//                    }
-//                }
-//                else{
-//                    for (int dbPos=dbEndPos; dbPos>dbEndPos-50; dbPos--){
-//                        if (isStpCodonR(targetSeq, dbPos)){
-//                            tempExonVec[trimmedExon].dbEndPos = dbPos;
-//                            tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
-//                            trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
-//                            outScope = 0;
-//                        }
-//                    }
-//                }
-//            }
             float matchIdentity = tempExonVec[trimmedExon].seqId/matchRatio(tempExonVec[trimmedExon].backtrace);
             if(isForward){
                 int currDbPos = tempExonVec[trimmedExon].dbEndPos - inScope;
