@@ -63,7 +63,7 @@ class ExonFinder{
                 findExonBoundaries(trimmedExonResult, candidate.candidates, tempExonVec, thread_idx);
                 //to set up <dpMatrixRow>
                 for (size_t id = 0; id < trimmedExonResult.size(); id++) {
-                    bool isFirstExon = trimmedExonResult[id].queryOrfStartPos==trimmedExonResult[id].qStartPos;
+//                    bool isFirstExon = trimmedExonResult[id].queryOrfStartPos==trimmedExonResult[id].qStartPos;
                     bool metStp = trimmedExonResult[id].qEndPos>trimmedExonResult[id].queryOrfEndPos;
                     int cost1 = metStp? COST_MAX : 0;
 //                    int score1 = isFirstExon ? queryOrfLength(trimmedExonResult[id])*0.1 : 0;
@@ -156,6 +156,7 @@ class ExonFinder{
     std::vector<Matcher::result_t> exonPath;
     std::vector<Matcher::result_t> trimmedExonResult;
     std::vector<Matcher::result_t> tempExonVec;
+
     std::vector<DpMatrixRow> dpMatrixRow;
 
     typedef std::pair<char, int> cigarTuple;
@@ -246,7 +247,7 @@ class ExonFinder{
     bool isStpCodonR(char * targetSeq, int index){
         char nt1 = std::toupper(targetSeq[index-3]);
         char nt2 = std::toupper(targetSeq[index-2]);
-        char nt3 = std::toupper(targetSeq[index-2]);
+        char nt3 = std::toupper(targetSeq[index-1]);
         return  (nt1=='T'&&nt2=='T'&&nt3=='A') || (nt1=='T'&&nt2=='C'&&nt3=='A')|| (nt1=='C'&&nt2=='T'&&nt3=='A');
     }
     bool isMetCodonF(char * targetSeq, int index){
@@ -425,54 +426,72 @@ class ExonFinder{
         }
         return false;
     }
-
-
+    bool firstExon(int qStartPos, int qOrfStartPos, int inScope, int outScope){
+        return (qStartPos - outScope) < qOrfStartPos && (qOrfStartPos < qStartPos + inScope);
+    }
+    bool lastExon(int qEndPos, int qOrfEndPos, int inScope, int outScope){
+        return (qEndPos-inScope < qOrfEndPos) && (qOrfEndPos < qEndPos + outScope);
+    }
     // to cut off AG and GT
     void findExonBoundaries(
             std::vector<Matcher::result_t> & trimmedExonResult,
             std::vector<Matcher::result_t> & exonPath,
             std::vector<Matcher::result_t> & tempExonVec,
             unsigned int thread_idx){
-
         int standardInScope = 150;
         int standardOutScope = 2;
         int inScope;
         int outScope;
+        int standardEdgeInScope = 30;
+        int standardEdgeOutScope = 150;
         char * targetSeq = targetSequence(exonPath[0].dbKey, thread_idx);
-
+        // find AGs
         for(size_t exon=0; exon<exonPath.size(); exon++) {
             bool isForward = exonPath[exon].dbStartPos < exonPath[exon].dbEndPos;
             outScope = standardOutScope;
             inScope = std::min((int)(dbLength(exonPath[exon])*0.7), standardInScope);
             float matchIdentity = exonPath[exon].seqId / matchRatio(exonPath[exon].backtrace);
-            if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos){
-                tempExonVec.emplace_back(exonPath[exon]);
-                outScope = 0;
-            }
-//            else if(exonPath[exon].qStartPos-0<30){
-////            if(exonPath[exon].qStartPos<exonPath[exon].queryOrfStartPos+30){
-//                int dbStartPos = exonPath[exon].dbStartPos;
-//                if(isForward){
-//                    for (int dbPos=dbStartPos; dbPos>dbStartPos-50; dbPos--){
-//                        if (isMetCodonF(targetSeq, dbPos)){
-//                            exonPath[exon].dbStartPos = dbPos;
-//                            tempExonVec.emplace_back(exonPath[exon]);
-//                            outScope = 0;
-//                        }
-//                    }
-//                }
-//                else{
-//                    for (int dbPos=dbStartPos; dbPos<dbStartPos+50; dbPos++){
-//                        if (isMetCodonR(targetSeq, dbPos)){
-//                            exonPath[exon].dbStartPos = dbPos;
-//                            tempExonVec.emplace_back(exonPath[exon]);
-//                            outScope = 0;
-//                        }
-//                    }
-//                }
+//            if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos){
+//                tempExonVec.emplace_back(exonPath[exon]);
+//                outScope = 0;
 //            }
+            int edgeInScope = standardEdgeInScope;
+            int edgeOutScope = std::min((int)(dbLength(exonPath[exon])*0.7), standardEdgeOutScope);
+            bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, edgeInScope, edgeOutScope);
+            if(isForward){
+                if (isFirst){
+                    int startPos = exonPath[exon].dbStartPos - edgeOutScope;
+                    int endPos = exonPath[exon].dbStartPos + edgeInScope;
+                    for(int dbPos=startPos; dbPos<=endPos; dbPos++){
+                        bool isMet = isMetCodonF(targetSeq, dbPos);
+                        if (isMet){
+                            outScope = 0;
+                            exonPath[exon].dbStartPos = dbPos;
+//                            std::pair<std::string, int> cigarQueryPos = cigarQueryPosUpdateAcceptorSite(exonPath[exon].backtrace,overlapLength);
+//                            exonPath[exon].backtrace = cigarQueryPos.first;
+                            exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
+//                            exonPath[exon].seqId = matchRatio(exonPath[exon].backtrace) * matchIdentity;
+                            tempExonVec.emplace_back(exonPath[exon]);
+                        }
 
-            //find AG
+                    }
+                }
+            }
+            else{
+                if (isFirst){
+                    int startPos = exonPath[exon].dbStartPos + edgeOutScope;
+                    int endPos = exonPath[exon].dbStartPos - edgeInScope;
+                    for(int dbPos=startPos; dbPos>=endPos; dbPos--){
+                        bool isMet = isMetCodonR(targetSeq, dbPos);
+                        if (isMet){
+                            outScope = 0;
+                            exonPath[exon].dbStartPos = dbPos;
+                            exonPath[exon].qStartPos = 0;
+                            tempExonVec.emplace_back(exonPath[exon]);
+                        }
+                    }
+                }
+            }
             if (isForward) {
                 int currDbPos = exonPath[exon].dbStartPos - outScope;
                 int overlapLength = -outScope;
@@ -483,12 +502,10 @@ class ExonFinder{
                         overlapLength++;
                         continue;
                     }
-
                     exonPath[exon].dbStartPos = currDbPos;
                     std::pair<std::string, int> cigarQueryPos = cigarQueryPosUpdateAcceptorSite(exonPath[exon].backtrace,overlapLength);
-
                     exonPath[exon].backtrace = cigarQueryPos.first;
-                    exonPath[exon].qStartPos +=cigarQueryPos.second;
+                    exonPath[exon].qStartPos += cigarQueryPos.second;
                     exonPath[exon].seqId = matchRatio(exonPath[exon].backtrace) * matchIdentity;
                     //TODO: reduce computation by reuse already trimmed cigar string
                     overlapLength = 0;
@@ -517,13 +534,52 @@ class ExonFinder{
 
             } //else statement end
         } //for loop end
+        // find GTs
         for(unsigned int trimmedExon=0; trimmedExon<tempExonVec.size(); trimmedExon++){
             bool isForward = tempExonVec[trimmedExon].dbStartPos < tempExonVec[trimmedExon].dbEndPos;
             inScope = std::min( (int)(dbLength(tempExonVec[trimmedExon])*0.7), standardInScope);
             outScope = standardOutScope;
-            if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos){
-                trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
-                outScope = 0;
+//            if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos){
+//                trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
+//                outScope = 0;
+//            }
+            int edgeInScope = standardEdgeInScope;
+            int edgeOutScope = std::min((int)(dbLength(tempExonVec[trimmedExon])*0.7), standardEdgeOutScope);
+            bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, standardEdgeInScope, standardEdgeOutScope);
+
+            if(isForward){
+                if (isLast){
+                    int startPos = tempExonVec[trimmedExon].dbEndPos - edgeInScope;
+                    int endPos = tempExonVec[trimmedExon].dbEndPos + edgeOutScope;
+                    for(int dbPos=startPos; dbPos<=endPos; dbPos++){
+                        bool isStp = isMetCodonF(targetSeq, dbPos);
+                        if (isStp){
+                            outScope = 0;
+                            tempExonVec[trimmedExon].dbEndPos = dbPos;
+//                            std::pair<std::string, int> cigarQueryPos = cigarQueryPosUpdateAcceptorSite(exonPath[exon].backtrace,overlapLength);
+//                            exonPath[exon].backtrace = cigarQueryPos.first;
+                            tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
+//                            exonPath[exon].seqId = matchRatio(exonPath[exon].backtrace) * matchIdentity;
+                            tempExonVec.emplace_back(tempExonVec[trimmedExon]);
+                        }
+
+                    }
+                }
+            }
+            else{
+                if (isLast){
+                    int startPos = tempExonVec[trimmedExon].dbStartPos + edgeOutScope;
+                    int endPos = tempExonVec[trimmedExon].dbStartPos - edgeInScope;
+                    for(int dbPos=startPos; dbPos>=endPos; dbPos--){
+                        bool isMet = isMetCodonR(targetSeq, dbPos);
+                        if (isMet){
+                            outScope = 0;
+                            tempExonVec[trimmedExon].dbEndPos = dbPos;
+                            tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
+                            tempExonVec.emplace_back(tempExonVec[trimmedExon]);
+                        }
+                    }
+                }
             }
             float matchIdentity = tempExonVec[trimmedExon].seqId/matchRatio(tempExonVec[trimmedExon].backtrace);
             if(isForward){
@@ -541,8 +597,7 @@ class ExonFinder{
                         continue;
                     }
                     tempExonVec[trimmedExon].dbEndPos = currDbPos;
-                    std::pair<std::string , int> cigarQueryPos = cigarQueryPosUpdateDonorSite(tempCigar,
-                                                                                              overlapLength);
+                    std::pair<std::string , int> cigarQueryPos = cigarQueryPosUpdateDonorSite(tempCigar, overlapLength);
                     tempExonVec[trimmedExon].qEndPos = tempQueryPos - cigarQueryPos.second;
                     tempExonVec[trimmedExon].backtrace = cigarQueryPos.first;
                     tempExonVec[trimmedExon].seqId = matchRatio(tempExonVec[trimmedExon].backtrace)*matchIdentity;
@@ -566,8 +621,7 @@ class ExonFinder{
                         continue;
                     }
                     tempExonVec[trimmedExon].dbEndPos = currDbPos;
-                    std::pair<std::string , int> cigarQueryPos = cigarQueryPosUpdateDonorSite(tempCigar,
-                                                                                              overlapLength);
+                    std::pair<std::string , int> cigarQueryPos = cigarQueryPosUpdateDonorSite(tempCigar, overlapLength);
                     tempExonVec[trimmedExon].qEndPos = tempQueryPos - cigarQueryPos.second;
                     tempExonVec[trimmedExon].backtrace = cigarQueryPos.first;
                     tempExonVec[trimmedExon].seqId = matchRatio(tempExonVec[trimmedExon].backtrace)*matchIdentity;
@@ -626,27 +680,12 @@ int findexons(int argc, const char **argv, const Command &command) {
             long orfScore = 0;
             long maxScore = 0;
 
-
             optimalSolutionWithScore.clear();
             for(size_t resIdx = 0; resIdx <inputAlignments.size(); resIdx++){
 
                 // to make sure that query position is never reversed, only db position can be reversed
                 // In default we search only on the formward frame 1,2,3 so this function is not called
                 // It is only important if search also on the backward frame!
-
-//                std::cout << inputAlignments[resIdx].qStartPos << "\t" << inputAlignments[resIdx].qEndPos << "\t";
-//                std::cout << inputAlignments[resIdx].dbStartPos+1 << "\t" << inputAlignments[resIdx].dbEndPos+1 << "\t";
-//                std::cout << inputAlignments[resIdx].queryOrfStartPos << "_" << inputAlignments[resIdx].queryOrfEndPos << "\t";
-//                std::cout << inputAlignments[resIdx].dbOrfStartPos+1 << "_" << inputAlignments[resIdx].dbOrfEndPos+1 << "\t";
-//                std::cout << inputAlignments[resIdx].dbKey << "\t" << inputAlignments[resIdx].score << "\t" << inputAlignments[resIdx].eval <<"\t";
-//                std::cout << inputAlignments[resIdx].seqId<< "\t" << inputAlignments[resIdx].backtrace<< "+++\n";
-
-//                // SEQUENCE IDENTITY THNRESHOLD
-//                if(inputAlignments[resIdx].seqId<0.65)
-//                    continue;
-//                if(inputAlignments[resIdx].dbKey!=0)
-//                    continue;
-
 
                 if(inputAlignments[resIdx].qStartPos>inputAlignments[resIdx].qEndPos){
                     inputAlignments[resIdx] = exonFinder.exonFlipper(inputAlignments[resIdx]);
@@ -681,41 +720,10 @@ int findexons(int argc, const char **argv, const Command &command) {
                 // last vector in optimalSolutionWithScore contains highest scoring solution
                 size_t optimestPathSize = optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates.size();
                 for(size_t optIdx = 0; optIdx < optimestPathSize; optIdx++){
-
                     size_t len = Matcher::resultToBuffer(buffer, optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx], true, false, true);
                     resultWriter.writeAdd(buffer, len, thread_idx);//result buffer, len, thread_idx
-//                    if (queryKey == 102){
-//                        std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size() -
-//                                                              1].candidates[optIdx].dbStartPos + 1 << "_" <<
-//                                  optimalSolutionWithScore[optimalSolutionWithScore.size() -
-//                                                           1].candidates[optIdx].dbEndPos + 1 << "  \t";
-//                        std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size() -
-//                                                              1].candidates[optIdx].dbEndPos -
-//                                     optimalSolutionWithScore[optimalSolutionWithScore.size() -
-//                                                              1].candidates[optIdx].dbStartPos << "  \t";
-//                        std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size() -
-//                                                              1].candidates[optIdx].qStartPos << "_"
-//                                  << optimalSolutionWithScore[optimalSolutionWithScore.size() -
-//                                                              1].candidates[optIdx].qEndPos << "  \t";
-//                        std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size() -
-//                                                              1].candidates[optIdx].queryOrfStartPos << "_"
-//                                  << optimalSolutionWithScore[optimalSolutionWithScore.size() -
-//                                                              1].candidates[optIdx].queryOrfEndPos << "  \t";
-//                        std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size() -
-//                                                              1].candidates[optIdx].dbOrfStartPos << "_"
-//                                  << optimalSolutionWithScore[optimalSolutionWithScore.size() -
-//                                                              1].candidates[optIdx].dbOrfEndPos << "  \t";
-//                        std::cout << optimalSolutionWithScore[optimalSolutionWithScore.size() -
-//                                                              1].candidates[optIdx].backtrace << "_"
-//                                  << optimalSolutionWithScore[optimalSolutionWithScore.size() -
-//                                                              1].candidates[optIdx].seqId << "\t";
-//                        std::cout << queryKey << "_" << optimalSolutionWithScore[optimalSolutionWithScore.size() -
-//                                                                                 1].candidates[optIdx].dbKey << "\n";
-//                    }
-
                 }
             }
-
             resultWriter.writeEnd(queryKey, thread_idx);
         } //the first for-loop finished
     }//end of the main scope
