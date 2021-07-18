@@ -75,14 +75,7 @@ class ExonFinder{
                 long bestPathScore = INT_MIN;
                 size_t lastPotentialExonInBestPath = 0;
                 size_t currId;
-
                 for (size_t currExon = 0; currExon < trimmedExonResult.size(); currExon++) {
-//                    std::cout << trimmedExonResult[currExon].qStartPos << "\t" << trimmedExonResult[currExon].qEndPos << "\t";
-//                    std::cout << trimmedExonResult[currExon].dbStartPos+1 << "\t" << trimmedExonResult[currExon].dbEndPos+1 << "\t";
-//                    std::cout << trimmedExonResult[currExon].queryOrfStartPos << "_" << trimmedExonResult[currExon].queryOrfEndPos << "\t";
-//                    std::cout << trimmedExonResult[currExon].dbOrfStartPos+1 << "_" << trimmedExonResult[currExon].dbOrfEndPos+1 << "\t";
-//                    std::cout << trimmedExonResult[currExon].backtrace<< "\t";
-//                    std::cout << trimmedExonResult[currExon].dbKey<< "\t" << trimmedExonResult[currExon].seqId<< "\n";
                     for (size_t prevExon = 0; prevExon < currExon; prevExon++) {
                         bool strand = trimmedExonResult[currExon].dbEndPos>trimmedExonResult[currExon].dbStartPos;
                         int intronLength = strand?trimmedExonResult[currExon].dbStartPos - trimmedExonResult[prevExon].dbEndPos+1:trimmedExonResult[prevExon].dbEndPos-trimmedExonResult[currExon].dbStartPos+1 ;
@@ -91,7 +84,6 @@ class ExonFinder{
                         bool sameOrf = prevExon==0 || (trimmedExonResult[currExon].qStartPos - trimmedExonResult[prevExon].qEndPos)%3==1;
                         bool notMetStp = trimmedExonResult[currExon].qEndPos <= trimmedExonResult[currExon].queryOrfEndPos;
                         bool isGoingForward = trimmedExonResult[currExon].qStartPos > trimmedExonResult[prevExon].qEndPos ;
-//                        bool isGoingForward = trimmedExonResult[prevExon].qEndPos != trimmedExonResult[prevExon].queryOrfEndPos ;
                         if (isNotTooLongIntron && isNotTooShortIntron  && notMetStp && isGoingForward){ //&& sameOrf
 //                            int exonGap = std::abs(trimmedExonResult[currExon].qStartPos - trimmedExonResult[prevExon].qEndPos -1)*10;
 //                            int cost1 = std::min(exonGap, COST_MAX); // DO WE NEED THIS?
@@ -113,15 +105,10 @@ class ExonFinder{
                         bestPathScore = dpMatrixRow[currExon].pathScore;
                     } //end of if conditional statement
                 } //end of DP 1st for loop statement
-
-//                std::cout << "----------" << "\n";
-//                std::cout << bestPathScore << "\n\n";
-
                 //end of Dynamic Progamming
                 //to update <optimalExonSolution>
                 currId = lastPotentialExonInBestPath;
                 bool isBestScore = false;
-//                std::cout << bestPathScore << "\n";
                 for(size_t i=0; i<candidates.size(); i++){
                     if(bestPathScore > candidates[i].score) {
                         isBestScore = true;
@@ -162,12 +149,9 @@ class ExonFinder{
     typedef std::pair<char, int> cigarTuple;
 
     Matcher::result_t stpCodonExtension(Matcher::result_t inputExon){
-//        std::cout<<inputExon.dbEndPos<<"\t";
         size_t lenSTPCodon = inputExon.dbStartPos < inputExon.dbEndPos ? 3 : -3;
         bool haveSTPCodon = inputExon.qEndPos == inputExon.queryOrfEndPos;
         inputExon.dbEndPos = haveSTPCodon ? (inputExon.dbEndPos + lenSTPCodon) : inputExon.dbEndPos;
-//        std::cout<<inputExon.qStartPos << "\t" << inputExon.qEndPos << lenSTPCodon << "\t";
-//        std::cout<<inputExon.dbEndPos<<"\n";
         return inputExon;
     }
 
@@ -442,8 +426,8 @@ class ExonFinder{
         int standardOutScope = 2;
         int inScope;
         int outScope;
-        int standardEdgeInScope = 30;
-        int standardEdgeOutScope = 150;
+        int standardEdgeInScope = 0;
+        int standardEdgeOutScope = 45;
         char * targetSeq = targetSequence(exonPath[0].dbKey, thread_idx);
         // find AGs
         for(size_t exon=0; exon<exonPath.size(); exon++) {
@@ -451,47 +435,42 @@ class ExonFinder{
             outScope = standardOutScope;
             inScope = std::min((int)(dbLength(exonPath[exon])*0.7), standardInScope);
             float matchIdentity = exonPath[exon].seqId / matchRatio(exonPath[exon].backtrace);
-//            if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos){
-//                tempExonVec.emplace_back(exonPath[exon]);
-//                outScope = 0;
+            if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos){
+                tempExonVec.emplace_back(exonPath[exon]);
+                outScope = 0;
+            }
+//            bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, standardEdgeInScope , standardEdgeOutScope);
+//            if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
+//                if (isForward){
+////                    int startPos = exonPath[exon].dbStartPos - edgeOutScope;
+////                    int endPos = exonPath[exon].dbStartPos + edgeInScope;
+////                    for(int dbPos=startPos; dbPos<=endPos; dbPos++){
+//                    int dbPos = exonPath[exon].dbStartPos - standardEdgeOutScope;
+//                    while (dbPos <= exonPath[exon].dbStartPos + standardEdgeInScope){
+//                        if (isMetCodonF(targetSeq, dbPos)){
+//                            outScope = 0;
+//                            exonPath[exon].dbStartPos = dbPos;
+//                            exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
+//                            tempExonVec.emplace_back(exonPath[exon]);
+//                        }
+//                        dbPos = dbPos + 3;
+//                    }
+//                } else {
+////                    int startPos = exonPath[exon].dbStartPos + edgeOutScope;
+////                    int endPos = exonPath[exon].dbStartPos - edgeInScope;
+//                    int dbPos = exonPath[exon].dbStartPos + standardEdgeOutScope;
+////                    for(int dbPos=startPos; dbPos>=endPos; dbPos--){
+//                    while (dbPos >= exonPath[exon].dbStartPos - standardEdgeInScope) {
+//                        if (isMetCodonR(targetSeq, dbPos)){
+//                            outScope = 0;
+//                            exonPath[exon].dbStartPos = dbPos;
+//                            exonPath[exon].qStartPos = 0;
+//                            tempExonVec.emplace_back(exonPath[exon]);
+//                        }
+//                        dbPos = dbPos - 3;
+//                    }
+//                }
 //            }
-            int edgeInScope = standardEdgeInScope;
-            int edgeOutScope = std::min((int)(dbLength(exonPath[exon])*0.7), standardEdgeOutScope);
-            bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, edgeInScope, edgeOutScope);
-            if(isForward){
-                if (isFirst){
-                    int startPos = exonPath[exon].dbStartPos - edgeOutScope;
-                    int endPos = exonPath[exon].dbStartPos + edgeInScope;
-                    for(int dbPos=startPos; dbPos<=endPos; dbPos++){
-                        bool isMet = isMetCodonF(targetSeq, dbPos);
-                        if (isMet){
-                            outScope = 0;
-                            exonPath[exon].dbStartPos = dbPos;
-//                            std::pair<std::string, int> cigarQueryPos = cigarQueryPosUpdateAcceptorSite(exonPath[exon].backtrace,overlapLength);
-//                            exonPath[exon].backtrace = cigarQueryPos.first;
-                            exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
-//                            exonPath[exon].seqId = matchRatio(exonPath[exon].backtrace) * matchIdentity;
-                            tempExonVec.emplace_back(exonPath[exon]);
-                        }
-
-                    }
-                }
-            }
-            else{
-                if (isFirst){
-                    int startPos = exonPath[exon].dbStartPos + edgeOutScope;
-                    int endPos = exonPath[exon].dbStartPos - edgeInScope;
-                    for(int dbPos=startPos; dbPos>=endPos; dbPos--){
-                        bool isMet = isMetCodonR(targetSeq, dbPos);
-                        if (isMet){
-                            outScope = 0;
-                            exonPath[exon].dbStartPos = dbPos;
-                            exonPath[exon].qStartPos = 0;
-                            tempExonVec.emplace_back(exonPath[exon]);
-                        }
-                    }
-                }
-            }
             if (isForward) {
                 int currDbPos = exonPath[exon].dbStartPos - outScope;
                 int overlapLength = -outScope;
@@ -539,45 +518,34 @@ class ExonFinder{
             bool isForward = tempExonVec[trimmedExon].dbStartPos < tempExonVec[trimmedExon].dbEndPos;
             inScope = std::min( (int)(dbLength(tempExonVec[trimmedExon])*0.7), standardInScope);
             outScope = standardOutScope;
-//            if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos){
-//                trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
-//                outScope = 0;
-//            }
-            int edgeInScope = standardEdgeInScope;
-            int edgeOutScope = std::min((int)(dbLength(tempExonVec[trimmedExon])*0.7), standardEdgeOutScope);
-            bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, standardEdgeInScope, standardEdgeOutScope);
-
-            if(isForward){
-                if (isLast){
-                    int startPos = tempExonVec[trimmedExon].dbEndPos - edgeInScope;
-                    int endPos = tempExonVec[trimmedExon].dbEndPos + edgeOutScope;
-                    for(int dbPos=startPos; dbPos<=endPos; dbPos++){
-                        bool isStp = isMetCodonF(targetSeq, dbPos);
-                        if (isStp){
+            if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos){
+                trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
+                outScope = 0;
+            }
+            bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, 0, standardEdgeOutScope);
+            if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
+                if (isForward){
+                    int dbPos = tempExonVec[trimmedExon].dbEndPos;
+                    while(dbPos <= tempExonVec[trimmedExon].dbEndPos + standardEdgeOutScope) {
+                        if (isMetCodonF(targetSeq, dbPos)){
                             outScope = 0;
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
-//                            std::pair<std::string, int> cigarQueryPos = cigarQueryPosUpdateAcceptorSite(exonPath[exon].backtrace,overlapLength);
-//                            exonPath[exon].backtrace = cigarQueryPos.first;
                             tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
-//                            exonPath[exon].seqId = matchRatio(exonPath[exon].backtrace) * matchIdentity;
                             tempExonVec.emplace_back(tempExonVec[trimmedExon]);
                         }
+                        dbPos = dbPos + 3;
 
                     }
-                }
-            }
-            else{
-                if (isLast){
-                    int startPos = tempExonVec[trimmedExon].dbStartPos + edgeOutScope;
-                    int endPos = tempExonVec[trimmedExon].dbStartPos - edgeInScope;
-                    for(int dbPos=startPos; dbPos>=endPos; dbPos--){
-                        bool isMet = isMetCodonR(targetSeq, dbPos);
-                        if (isMet){
+                } else {
+                    int dbPos = tempExonVec[trimmedExon].dbStartPos - standardEdgeOutScope;
+                    while (dbPos >= tempExonVec[trimmedExon].dbStartPos) {
+                        if (isStpCodonR(targetSeq, dbPos)){
                             outScope = 0;
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
                             tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
                             tempExonVec.emplace_back(tempExonVec[trimmedExon]);
                         }
+                        dbPos = dbPos - 3;
                     }
                 }
             }
@@ -611,7 +579,6 @@ class ExonFinder{
                 int dbScopeEndPos = tempExonVec[trimmedExon].dbEndPos-outScope;
                 std::string tempCigar = tempExonVec[trimmedExon].backtrace;
                 int tempQueryPos = tempExonVec[trimmedExon].qEndPos;
-                //int temp = tempExonVec[trimmedExon].dbStartPos;
                 while(currDbPos > dbScopeEndPos - 3 - outScope){
                     if (currDbPos < tempExonVec[trimmedExon].dbOrfEndPos - outScope)
                         break;
