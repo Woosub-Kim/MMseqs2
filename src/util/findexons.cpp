@@ -426,7 +426,6 @@ class ExonFinder{
         int standardOutScope = 2;
         int inScope;
         int outScope;
-        int standardEdgeInScope = 0;
         int standardEdgeOutScope = 45;
         char * targetSeq = targetSequence(exonPath[0].dbKey, thread_idx);
         // find AGs
@@ -439,38 +438,6 @@ class ExonFinder{
                 tempExonVec.emplace_back(exonPath[exon]);
                 outScope = 0;
             }
-//            bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, standardEdgeInScope , standardEdgeOutScope);
-//            if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
-//                if (isForward){
-////                    int startPos = exonPath[exon].dbStartPos - edgeOutScope;
-////                    int endPos = exonPath[exon].dbStartPos + edgeInScope;
-////                    for(int dbPos=startPos; dbPos<=endPos; dbPos++){
-//                    int dbPos = exonPath[exon].dbStartPos - standardEdgeOutScope;
-//                    while (dbPos <= exonPath[exon].dbStartPos + standardEdgeInScope){
-//                        if (isMetCodonF(targetSeq, dbPos)){
-//                            outScope = 0;
-//                            exonPath[exon].dbStartPos = dbPos;
-//                            exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
-//                            tempExonVec.emplace_back(exonPath[exon]);
-//                        }
-//                        dbPos = dbPos + 3;
-//                    }
-//                } else {
-////                    int startPos = exonPath[exon].dbStartPos + edgeOutScope;
-////                    int endPos = exonPath[exon].dbStartPos - edgeInScope;
-//                    int dbPos = exonPath[exon].dbStartPos + standardEdgeOutScope;
-////                    for(int dbPos=startPos; dbPos>=endPos; dbPos--){
-//                    while (dbPos >= exonPath[exon].dbStartPos - standardEdgeInScope) {
-//                        if (isMetCodonR(targetSeq, dbPos)){
-//                            outScope = 0;
-//                            exonPath[exon].dbStartPos = dbPos;
-//                            exonPath[exon].qStartPos = 0;
-//                            tempExonVec.emplace_back(exonPath[exon]);
-//                        }
-//                        dbPos = dbPos - 3;
-//                    }
-//                }
-//            }
             if (isForward) {
                 int currDbPos = exonPath[exon].dbStartPos - outScope;
                 int overlapLength = -outScope;
@@ -522,6 +489,7 @@ class ExonFinder{
                 trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
                 outScope = 0;
             }
+            float matchIdentity = tempExonVec[trimmedExon].seqId/matchRatio(tempExonVec[trimmedExon].backtrace);
             bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, 0, standardEdgeOutScope);
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
@@ -532,24 +500,30 @@ class ExonFinder{
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
                             tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
                             tempExonVec.emplace_back(tempExonVec[trimmedExon]);
+                            tempExonVec[trimmedExon].backtrace = cigarQueryPosUpdateDonorSite(tempExonVec[trimmedExon].backtrace, tempExonVec[trimmedExon].dbEndPos - dbPos).first;
+                            tempExonVec[trimmedExon].seqId = matchRatio(tempExonVec[trimmedExon].backtrace)*matchIdentity;
+                            break;
                         }
                         dbPos = dbPos + 3;
 
                     }
                 } else {
-                    int dbPos = tempExonVec[trimmedExon].dbStartPos - standardEdgeOutScope;
-                    while (dbPos >= tempExonVec[trimmedExon].dbStartPos) {
+                    int dbPos = tempExonVec[trimmedExon].dbEndPos;
+                    while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - standardEdgeOutScope) {
                         if (isStpCodonR(targetSeq, dbPos)){
                             outScope = 0;
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
                             tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
                             tempExonVec.emplace_back(tempExonVec[trimmedExon]);
+                            tempExonVec[trimmedExon].backtrace = cigarQueryPosUpdateDonorSite(tempExonVec[trimmedExon].backtrace, dbPos - tempExonVec[trimmedExon].dbEndPos).first;
+                            tempExonVec[trimmedExon].seqId = matchRatio(tempExonVec[trimmedExon].backtrace)*matchIdentity;
+                            break;
                         }
                         dbPos = dbPos - 3;
                     }
                 }
             }
-            float matchIdentity = tempExonVec[trimmedExon].seqId/matchRatio(tempExonVec[trimmedExon].backtrace);
+            matchIdentity = tempExonVec[trimmedExon].seqId/matchRatio(tempExonVec[trimmedExon].backtrace);
             if(isForward){
                 int currDbPos = tempExonVec[trimmedExon].dbEndPos - inScope;
                 int overlapLength = inScope;
