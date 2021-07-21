@@ -355,6 +355,20 @@ class ExonFinder{
         return std::pair<std::string,int>(returnString, returnNumber);
     }
 
+    std::string addCigar(std::string cigar, char symbol, int length){
+        std::string newCigar = "";
+        std::vector<cigarTuple> tupleVector = cigarToTuple(cigar);
+        if (cigar != "" && tupleVector[tupleVector.size()-1].first == symbol) {
+            tupleVector[tupleVector.size() - 1].second += length;
+        } else if (length > 0) {
+            tupleVector.emplace_back(std::pair<char, int>(symbol, length));
+        }
+        for(size_t cnt=0; cnt<tupleVector.size(); cnt++){
+            newCigar = newCigar + std::to_string(tupleVector[cnt].second) + tupleVector[cnt].first;
+        }
+        return newCigar;
+    }
+
     //to update identity
     int cigarLength(std::string cigar){
         std::vector<cigarTuple> cigarTupleVec =  cigarToTuple(cigar);
@@ -499,9 +513,10 @@ class ExonFinder{
                             outScope = 0;
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
                             tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
+                            tempExonVec[trimmedExon].backtrace = addCigar(tempExonVec[trimmedExon].backtrace, 'D', dbPos - tempExonVec[trimmedExon].dbEndPos);
+//                            tempExonVec[trimmedExon].backtrace = cigarQueryPosUpdateDonorSite(tempExonVec[trimmedExon].backtrace, tempExonVec[trimmedExon].dbEndPos - dbPos).first;
+//                            tempExonVec[trimmedExon].seqId = matchRatio(tempExonVec[trimmedExon].backtrace)*matchIdentity;
                             tempExonVec.emplace_back(tempExonVec[trimmedExon]);
-                            tempExonVec[trimmedExon].backtrace = cigarQueryPosUpdateDonorSite(tempExonVec[trimmedExon].backtrace, tempExonVec[trimmedExon].dbEndPos - dbPos).first;
-                            tempExonVec[trimmedExon].seqId = matchRatio(tempExonVec[trimmedExon].backtrace)*matchIdentity;
                             break;
                         }
                         dbPos = dbPos + 3;
@@ -514,9 +529,10 @@ class ExonFinder{
                             outScope = 0;
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
                             tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
+                            tempExonVec[trimmedExon].backtrace = addCigar(tempExonVec[trimmedExon].backtrace, 'D', tempExonVec[trimmedExon].dbEndPos - dbPos);
+//                            tempExonVec[trimmedExon].backtrace = cigarQueryPosUpdateDonorSite(tempExonVec[trimmedExon].backtrace, dbPos - tempExonVec[trimmedExon].dbEndPos).first;
+//                            tempExonVec[trimmedExon].seqId = matchRatio(tempExonVec[trimmedExon].backtrace)*matchIdentity;
                             tempExonVec.emplace_back(tempExonVec[trimmedExon]);
-                            tempExonVec[trimmedExon].backtrace = cigarQueryPosUpdateDonorSite(tempExonVec[trimmedExon].backtrace, dbPos - tempExonVec[trimmedExon].dbEndPos).first;
-                            tempExonVec[trimmedExon].seqId = matchRatio(tempExonVec[trimmedExon].backtrace)*matchIdentity;
                             break;
                         }
                         dbPos = dbPos - 3;
