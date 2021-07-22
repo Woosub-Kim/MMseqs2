@@ -511,11 +511,14 @@ class ExonFinder{
                     while(dbPos <= tempExonVec[trimmedExon].dbEndPos + standardEdgeOutScope) {
                         if (isMetCodonF(targetSeq, dbPos)){
                             outScope = 0;
-                            tempExonVec[trimmedExon].dbEndPos = dbPos;
-                            tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
+//                            All Ds
                             tempExonVec[trimmedExon].backtrace = addCigar(tempExonVec[trimmedExon].backtrace, 'D', dbPos - tempExonVec[trimmedExon].dbEndPos);
+//                            All Ms
 //                            tempExonVec[trimmedExon].backtrace = cigarQueryPosUpdateDonorSite(tempExonVec[trimmedExon].backtrace, tempExonVec[trimmedExon].dbEndPos - dbPos).first;
 //                            tempExonVec[trimmedExon].seqId = matchRatio(tempExonVec[trimmedExon].backtrace)*matchIdentity;
+//                            update
+                            tempExonVec[trimmedExon].dbEndPos = dbPos;
+                            tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
                             tempExonVec.emplace_back(tempExonVec[trimmedExon]);
                             break;
                         }
@@ -527,11 +530,14 @@ class ExonFinder{
                     while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - standardEdgeOutScope) {
                         if (isStpCodonR(targetSeq, dbPos)){
                             outScope = 0;
-                            tempExonVec[trimmedExon].dbEndPos = dbPos;
-                            tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
+//                            all Ds
                             tempExonVec[trimmedExon].backtrace = addCigar(tempExonVec[trimmedExon].backtrace, 'D', tempExonVec[trimmedExon].dbEndPos - dbPos);
+//                            all Ms
 //                            tempExonVec[trimmedExon].backtrace = cigarQueryPosUpdateDonorSite(tempExonVec[trimmedExon].backtrace, dbPos - tempExonVec[trimmedExon].dbEndPos).first;
 //                            tempExonVec[trimmedExon].seqId = matchRatio(tempExonVec[trimmedExon].backtrace)*matchIdentity;
+//                            update
+                            tempExonVec[trimmedExon].dbEndPos = dbPos;
+                            tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
                             tempExonVec.emplace_back(tempExonVec[trimmedExon]);
                             break;
                         }
