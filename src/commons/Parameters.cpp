@@ -126,6 +126,14 @@ Parameters::Parameters():
 
         // result2stats
         PARAM_STAT(PARAM_STAT_ID, "--stat", "Statistics to be computed", "One of: linecount, mean, doolittle, charges, seqlen, firstline", typeid(std::string), (void *) &stat, ""),
+        
+        // findexons
+        PARAM_ORF_BONUS_RATIO(PARAM_ORF_BONUS_RATIO_ID, "--orf-bonus-ratio", "ORF bonus ratio", "ratio for bonus score for keeping orf [0.1]", typeid(float), &orfBonusRatio, "^[0-9]*(\\.[0-9]+)?$"),
+        PARAM_TRIM_SPLICE_IN_SCOPE(PARAM_TRIM_SPLICE_IN_SCOPE_ID, "--trim-splice-in-scope", "Trimming splice in scope", "trimming in scope for proper splicing sites [90]", typeid(int), &trimSpliceInScope, "^[0-9]*$"),
+        PARAM_TRIM_SPLICE_OUT_SCOPE(PARAM_TRIM_SPLICE_OUT_SCOPE_ID, "--trim-splice-in-scope", "Trimming splice out scope", "trimming out scope for proper splicing sites [2]", typeid(int), &trimSpliceOutScope,"^[0-9]*$"),
+        PARAM_TRIM_TERMINUS_IN_SCOPE(PARAM_TRIM_TERMINUS_IN_SCOPE_ID, "--trim-terminus-in-scope", "Trimming terminus in scope", "trimming in scope for proer sites ofstart and end codons [6]", typeid(int), &trimTermInScope, "^[0-9]*$"),
+        PARAM_TRIM_TERMINUS_OUT_SCOPE(PARAM_TRIM_TERMINUS_OUT_SCOPE_ID, "--trim-terminus-out-scope", "Trimming terminus out scope", "trimming out scope for proer sites ofstart and end codons [45]", typeid(int), &trimTermOutScope, "^[0-9]*$"),
+
         // linearcluster
         PARAM_KMER_PER_SEQ(PARAM_KMER_PER_SEQ_ID, "--kmer-per-seq", "k-mers per sequence", "k-mers per sequence", typeid(int), (void *) &kmersPerSequence, "^[1-9]{1}[0-9]*$", MMseqsParameter::COMMAND_CLUSTLINEAR),
         PARAM_KMER_PER_SEQ_SCALE(PARAM_KMER_PER_SEQ_SCALE_ID, "--kmer-per-seq-scale", "Scale k-mers per sequence", "Scale k-mer per sequence based on sequence length as kmer-per-seq val + scale x seqlen", typeid(MultiParam<float>), (void *) &kmersPerSequenceScale, "^0(\\.[0-9]+)?|1(\\.0+)?$", MMseqsParameter::COMMAND_CLUSTLINEAR),
@@ -1244,6 +1252,15 @@ Parameters::Parameters():
     tar2db.push_back(&PARAM_THREADS);
     tar2db.push_back(&PARAM_V);
 
+    // findexons
+    findexons.push_back(&PARAM_V);
+    findexons.push_back(&PARAM_COMPRESSED);
+    findexons.push_back(&PARAM_ORF_BONUS_RATIO);
+    findexons.push_back(&PARAM_TRIM_SPLICE_IN_SCOPE);
+    findexons.push_back(&PARAM_TRIM_SPLICE_OUT_SCOPE);
+    findexons.push_back(&PARAM_TRIM_TERMINUS_IN_SCOPE);
+    findexons.push_back(&PARAM_TRIM_TERMINUS_OUT_SCOPE);
+    
     //checkSaneEnvironment();
     setDefaults();
 }
@@ -2279,6 +2296,13 @@ void Parameters::setDefaults() {
     // tar2db
     tarInclude = ".*";
     tarExclude = "^$";
+    
+    // findexons
+    orfBonusRatio = 0.1;
+    trimSpliceInScope = 90;
+    trimSpliceOutScope = 2;
+    trimTermOutScope = 45;
+    trimTermInScope = 6;
 
     lcaRanks = "";
     showTaxLineage = 0;

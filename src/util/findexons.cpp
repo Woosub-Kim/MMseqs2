@@ -46,10 +46,17 @@ class ExonFinder{
         //class costructer
         ExonFinder(IndexReader * tDbr, IndexReader * qDbr, unsigned int queryKey) : tDbr(tDbr), qDbr(qDbr), queryKey(queryKey){}
         //to do dynamic programming
-        void findOptimalExons(std::vector<Matcher::result_t> & optimalExonSolution,
-                              std::vector<Matcher::result_t> & exonPath, //orfResults
-                              unsigned int thread_idx,
-                              long & orfScore) {
+        void findOptimalExons(
+                    std::vector<Matcher::result_t> & optimalExonSolution,
+                    std::vector<Matcher::result_t> & exonPath, //orfResults
+                    unsigned int thread_idx,
+                    long & orfScore,
+                    float orfKeepingBonusRatio,
+                    unsigned int trimmingSpliceSiteInScope,
+                    unsigned int trimmingSpliceSiteOutScope,
+                    unsigned int trimmingTerminusOutScope,
+                    unsigned int trimmingTerminusInScope
+                ) {
             std::sort(exonPath.begin(), exonPath.end(), Matcher::compareByDbkeyAndStrand);
 
             std::vector<ExonCandidates> candidates = createPotentialExonCombinations(exonPath);
@@ -60,16 +67,15 @@ class ExonFinder{
                 //to construct <exonPath> which carries exon cadidate data, save the data of intron candidate into stretcheVec
                 tempExonVec.clear();
                 trimmedExonResult.clear();
-                findExonBoundaries(trimmedExonResult, candidate.candidates, tempExonVec, thread_idx);
+                findExonBoundaries(trimmedExonResult, candidate.candidates, tempExonVec, thread_idx, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope);
                 //to set up <dpMatrixRow>
                 for (size_t id = 0; id < trimmedExonResult.size(); id++) {
 //                    bool isFirstExon = trimmedExonResult[id].queryOrfStartPos==trimmedExonResult[id].qStartPos;
+//                    int score1 = isFirstExon ? queryOrfLength(trimmedExonResult[id])*0.1 : 0;
                     bool metStp = trimmedExonResult[id].qEndPos>trimmedExonResult[id].queryOrfEndPos;
                     int cost1 = metStp? COST_MAX : 0;
-//                    int score1 = isFirstExon ? queryOrfLength(trimmedExonResult[id])*0.1 : 0;
                     int score2 = queryLength(trimmedExonResult[id]) * trimmedExonResult[id].seqId;
-//                    long score = score1 + score2 - cost1;
-                    long score = score2 - cost1;
+                    long score = score2 - cost1; // + score1;
                     dpMatrixRow.emplace_back(DpMatrixRow(id,score));
                 }
                 long bestPathScore = INT_MIN;
@@ -85,13 +91,10 @@ class ExonFinder{
                         bool notMetStp = trimmedExonResult[currExon].qEndPos <= trimmedExonResult[currExon].queryOrfEndPos;
                         bool isGoingForward = trimmedExonResult[currExon].qStartPos > trimmedExonResult[prevExon].qEndPos ;
                         if (isNotTooLongIntron && isNotTooShortIntron  && notMetStp && isGoingForward){ //&& sameOrf
-//                            int exonGap = std::abs(trimmedExonResult[currExon].qStartPos - trimmedExonResult[prevExon].qEndPos -1)*10;
-//                            int cost1 = std::min(exonGap, COST_MAX); // DO WE NEED THIS?
                             int cost2 = trimmedExonResult[currExon].qEndPos>trimmedExonResult[currExon].queryOrfEndPos ? COST_MAX : 0;
                             int score1 = queryLength(trimmedExonResult[currExon])*trimmedExonResult[currExon].seqId;
-                            int score2 = sameOrf ? queryLength(trimmedExonResult[currExon])*0.1:0;
+                            int score2 = sameOrf ? queryLength(trimmedExonResult[currExon])*orfKeepingBonusRatio:0;
                             long bestScorePrev = dpMatrixRow[prevExon].pathScore;
-//                            long currScoreWithPrev = bestScorePrev + score1  - cost2 - cost1 + score2;
                             long currScoreWithPrev = bestScorePrev + score1  - cost2 + score2;
                             // update row of currPotentialExon in case of improvement:
                             if (currScoreWithPrev > dpMatrixRow[currExon].pathScore  ) {
@@ -432,31 +435,35 @@ class ExonFinder{
     }
     // to cut off AG and GT
     void findExonBoundaries(
-            std::vector<Matcher::result_t> & trimmedExonResult, std::vector<Matcher::result_t> & exonPath,
-            std::vector<Matcher::result_t> & tempExonVec, unsigned int thread_idx) {
-        int standardInScope = 90;
-        int standardOutScope = 2;
+                std::vector<Matcher::result_t> & trimmedExonResult,
+                std::vector<Matcher::result_t> & exonPath,
+                std::vector<Matcher::result_t> & tempExonVec,
+                unsigned int thread_idx,
+                int trimmingSpliceSiteInScope,
+                int trimmingSpliceSiteOutScope,
+                int trimmingTerminusOutScope,
+                int trimmingTerminusInScope
+            ) {
+        float maxTrimmingScopeRatio = 0.6;
         int inScope;
         int outScope;
-        int edgeOutScope = 45;
-        int edgeInScope = 6;
         char * targetSeq = targetSequence(exonPath[0].dbKey, thread_idx);
         // find AGs
         for(size_t exon=0; exon<exonPath.size(); exon++) {
             bool isForward = exonPath[exon].dbStartPos < exonPath[exon].dbEndPos;
-            outScope = standardOutScope;
-            inScope = std::min((int)(dbLength(exonPath[exon])*0.6), standardInScope);
+            outScope = trimmingSpliceSiteOutScope;
+            inScope = std::min((int)(dbLength(exonPath[exon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
             float matchIdentity = exonPath[exon].seqId / matchRatio(exonPath[exon].backtrace);
-            bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, 0, edgeOutScope);
+            bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, 0, trimmingTerminusOutScope);
             if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos){
                 tempExonVec.emplace_back(exonPath[exon]);
                 outScope = 0;
             }
             if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
                 if (isForward){
-                    int dbPos = exonPath[exon].dbStartPos + edgeInScope;
+                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
                     int originStart = exonPath[exon].dbStartPos;
-                    while(dbPos >= exonPath[exon].dbStartPos - edgeOutScope) {
+                    while(dbPos >= exonPath[exon].dbStartPos - trimmingTerminusOutScope) {
                         if (isMetCodonF(targetSeq, dbPos)){
                             outScope = 0;
                             if (originStart < dbPos){
@@ -471,9 +478,9 @@ class ExonFinder{
                         dbPos = dbPos - 3;
                     }
                 } else {
-                    int dbPos = exonPath[exon].dbStartPos - edgeInScope;
+                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope;
                     int originStart = exonPath[exon].dbStartPos;
-                    while (dbPos <= exonPath[exon].dbStartPos  + edgeOutScope) {
+                    while (dbPos <= exonPath[exon].dbStartPos  + trimmingTerminusOutScope) {
                         if (isMetCodonR(targetSeq, dbPos)){
                             outScope = 0;
                             if (originStart > dbPos){
@@ -534,18 +541,17 @@ class ExonFinder{
         // find GTs
         for(unsigned int trimmedExon=0; trimmedExon<tempExonVec.size(); trimmedExon++){
             bool isForward = tempExonVec[trimmedExon].dbStartPos < tempExonVec[trimmedExon].dbEndPos;
-//            inScope = std::min( (int)(dbLength(tempExonVec[trimmedExon])*0.7), standardInScope);
-            inScope = std::min( (int)(dbLength(tempExonVec[trimmedExon])*0.6), standardInScope);
-            outScope = standardOutScope;
+            inScope = std::min( (int)(dbLength(tempExonVec[trimmedExon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
+            outScope = trimmingSpliceSiteOutScope;
             if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos){
                 trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
                 outScope = 0;
             }
-            bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, 0, edgeOutScope);
+            bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, 0, trimmingTerminusOutScope);
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
                     int dbPos = tempExonVec[trimmedExon].dbEndPos;
-                    while(dbPos <= tempExonVec[trimmedExon].dbEndPos + edgeOutScope) {
+                    while(dbPos <= tempExonVec[trimmedExon].dbEndPos + trimmingTerminusOutScope) {
                         if (isStpCodonF(targetSeq, dbPos)){
                             outScope = 0;
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
@@ -557,7 +563,7 @@ class ExonFinder{
                     }
                 } else {
                     int dbPos = tempExonVec[trimmedExon].dbEndPos;
-                    while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - edgeOutScope) {
+                    while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - trimmingTerminusOutScope) {
                         if (isStpCodonR(targetSeq, dbPos)){
                             outScope = 0;
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
@@ -623,9 +629,18 @@ class ExonFinder{
 
 };//end of class
 
+
 int findexons(int argc, const char **argv, const Command &command) {
+    std::cout << "Args: " << argv << std::endl;
     Parameters &par = Parameters::getInstance();
     par.parseParameters(argc, argv, command, true, 0, 0);
+
+    float orfKeepingBonusRatio = par.orfBonusRatio;
+    unsigned int trimmingSpliceSiteInScope = par.trimSpliceInScope;
+    unsigned int trimmingSpliceSiteOutScope = par.trimSpliceOutScope;
+    unsigned int trimmingTerminusInScope = par.trimTermInScope;
+    unsigned int trimmingTerminusOutScope = par.trimTermOutScope;
+
     const bool touch = (par.preloadMode != Parameters::PRELOAD_MODE_MMAP);
     IndexReader qDbr(par.db1, par.threads,  IndexReader::SRC_SEQUENCES, (touch) ? (IndexReader::PRELOAD_INDEX | IndexReader::PRELOAD_DATA) : 0, (DBReader<unsigned int>::USE_INDEX | DBReader<unsigned int>::USE_DATA) );
     IndexReader tDbr(par.db2, par.threads, IndexReader::SRC_SEQUENCES, (touch) ? (IndexReader::PRELOAD_INDEX | IndexReader::PRELOAD_DATA) : 0, (DBReader<unsigned int>::USE_INDEX | DBReader<unsigned int>::USE_DATA) );
@@ -634,6 +649,8 @@ int findexons(int argc, const char **argv, const Command &command) {
     Debug::Progress progress(alnDbr.getSize());
     DBWriter resultWriter(par.db4.c_str(), par.db4Index.c_str(), par.threads, par.compressed, Parameters::DBTYPE_ALIGNMENT_RES);
     resultWriter.open();
+
+
 
 #pragma omp parallel
     {
@@ -660,20 +677,16 @@ int findexons(int argc, const char **argv, const Command &command) {
             inputAlignments.clear();
             Matcher::readAlignmentResults(inputAlignments, data, true);
             std::sort(inputAlignments.begin(), inputAlignments.end(), Matcher::compareOrfStartOrfEnd);
-
             int prevQueryOrfStartPos = inputAlignments[0].queryOrfStartPos;
             int prevQueryOrfEndPos = inputAlignments[0].queryOrfEndPos;
             resultWriter.writeStart(thread_idx);
             long orfScore = 0;
             long maxScore = 0;
-
             optimalSolutionWithScore.clear();
             for(size_t resIdx = 0; resIdx <inputAlignments.size(); resIdx++){
-
                 // to make sure that query position is never reversed, only db position can be reversed
                 // In default we search only on the formward frame 1,2,3 so this function is not called
                 // It is only important if search also on the backward frame!
-
                 if(inputAlignments[resIdx].qStartPos>inputAlignments[resIdx].qEndPos){
                     inputAlignments[resIdx] = exonFinder.exonFlipper(inputAlignments[resIdx]);
                 } // end of if conditional statement to correct flipped exon
@@ -682,7 +695,7 @@ int findexons(int argc, const char **argv, const Command &command) {
                 if(querySameOrf){
                     orfResults.emplace_back(inputAlignments[resIdx]);
                 }else{
-                    exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore);
+                    exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore, orfKeepingBonusRatio, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope);
                     orfResults.clear();
                     if(orfScore>maxScore){
                         optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
@@ -695,14 +708,13 @@ int findexons(int argc, const char **argv, const Command &command) {
             }
             //last orf info -> optimal
             if(orfResults.size() > 0){
-                exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore);
+                exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore, orfKeepingBonusRatio, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope);
                 orfResults.clear();
                 if(orfScore>maxScore){
                     optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
                     maxScore = orfScore;
                 }
             }
-
             if(optimalSolutionWithScore.size()>0) {
                 // last vector in optimalSolutionWithScore contains highest scoring solution
                 size_t optimestPathSize = optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates.size();

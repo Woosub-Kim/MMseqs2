@@ -51,6 +51,7 @@ extern int extractorfs(int argc, const char **argv, const Command& command);
 extern int extractframes(int argc, const char **argv, const Command& command);
 extern int filterdb(int argc, const char **argv, const Command& command);
 extern int filterresult(int argc, const char **argv, const Command& command);
+//extern int tar2db(int argc, const char **argv, const Command& command);
 extern int findexons(int argc, const char **argv, const Command& command);
 extern int gff2db(int argc, const char **argv, const Command& command);
 extern int masksequence(int argc, const char **argv, const Command& command);

@@ -630,6 +630,13 @@ public:
     // tar2db
     std::string tarInclude;
     std::string tarExclude;
+    
+    // findexons
+    float orfBonusRatio;
+    int trimSpliceInScope;
+    int trimSpliceOutScope;
+    int trimTermOutScope;
+    int trimTermInScope;
 
     // for modules that should handle -h themselves
     bool help;
@@ -948,6 +955,13 @@ public:
     // tar2db
     PARAMETER(PARAM_TAR_INCLUDE)
     PARAMETER(PARAM_TAR_EXCLUDE)
+    
+    // findexons
+    PARAMETER(PARAM_ORF_BONUS_RATIO)
+    PARAMETER(PARAM_TRIM_SPLICE_IN_SCOPE)
+    PARAMETER(PARAM_TRIM_SPLICE_OUT_SCOPE)
+    PARAMETER(PARAM_TRIM_TERMINUS_IN_SCOPE)
+    PARAMETER(PARAM_TRIM_TERMINUS_OUT_SCOPE)
 
     // for modules that should handle -h themselves
     PARAMETER(PARAM_HELP)
@@ -1056,6 +1070,8 @@ public:
     std::vector<MMseqsParameter*> enrichworkflow;
     std::vector<MMseqsParameter*> databases;
     std::vector<MMseqsParameter*> tar2db;
+    // findexons
+    std::vector<MMseqsParameter*> findexons;
 
     std::vector<MMseqsParameter*> combineList(const std::vector<MMseqsParameter*> &par1,
                                              const std::vector<MMseqsParameter*> &par2);

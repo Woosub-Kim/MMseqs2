@@ -724,15 +724,27 @@ std::vector<Command> baseCommands = {
                 CITATION_MMSEQS2, {{"DB", DbType::ACCESS_MODE_INPUT, DbType::NEED_DATA, &DbValidator::allDb },
                                           {"DB", DbType::ACCESS_MODE_INPUT, DbType::NEED_DATA, &DbValidator::allDb },
                                           {"DB", DbType::ACCESS_MODE_OUTPUT, DbType::NEED_DATA, &DbValidator::allDb }}},
-        {"findexons",  findexons,           &par.verbandcompression,          COMMAND_EXPERT,
+        {"findexons",  findexons,  &par.findexons, COMMAND_EXPERT, //&par.verbandcompression, COMMAND_EXPERT,
                 "Finds the best exon structure from alignments",
-                NULL,
+                NULL, //examples
                 "Woosub Kim <...>",
                 "<i:queryDB> <i:targetDB> <i:resultDB> <o:resultDB>",
                 CITATION_MMSEQS2, {{"queryDB", DbType::ACCESS_MODE_INPUT, DbType::NEED_DATA, &DbValidator::sequenceDb },
                                           {"targetDB", DbType::ACCESS_MODE_INPUT, DbType::NEED_DATA, &DbValidator::sequenceDb },
                                           {"alignmentDB", DbType::ACCESS_MODE_INPUT, DbType::NEED_DATA, &DbValidator::alignmentDb },
                                           {"alignmentDB", DbType::ACCESS_MODE_OUTPUT, DbType::NEED_DATA, &DbValidator::alignmentDb }}},
+//        {"tar2db",               tar2db,               &par.tar2db,               COMMAND_DATABASE_CREATION | COMMAND_EXPERT,
+//                "Convert content of tar archives to any DB",
+//                "# Assuming tar archive containing three aligned FASTA files:\n"
+//                "#  * folder/msa1.fa.gz  * folder/msa2.fa  * folder/msa3.fa\n"
+//                "# Create a msaDB with three DB entries each containing a separate MSA\n"
+//                "mmseqs tar2db archive.tar.gz msaDB --output-dbtype 11\n",
+//                "Milot Mirdita <milot@mirdita.de>",
+//                "<i:tar[.gz]> ... <i:tar[.gz]> <o:resultDB>",
+//                CITATION_MMSEQS2, {{".tar[.gz]", DbType::ACCESS_MODE_INPUT, DbType::NEED_DATA | DbType::VARIADIC, &DbValidator::flatfile },
+//                                          {"DB", DbType::ACCESS_MODE_OUTPUT, DbType::NEED_DATA, &DbValidator::flatfile }}},
+
+
         {"splitdb",              splitdb,              &par.splitdb,              COMMAND_SET,
                 "Split DB into subsets",
                 NULL,
