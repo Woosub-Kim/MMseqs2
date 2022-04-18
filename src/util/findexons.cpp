@@ -58,7 +58,7 @@ class ExonFinder{
                     unsigned int trimmingTerminusInScope
                 ) {
             //temp
-            orfKeepingBonusRatio = 0
+            orfKeepingBonusRatio = 0;
             std::sort(exonPath.begin(), exonPath.end(), Matcher::compareByDbkeyAndStrand);
 
             std::vector<ExonCandidates> candidates = createPotentialExonCombinations(exonPath);
