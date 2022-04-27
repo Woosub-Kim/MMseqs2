@@ -2298,11 +2298,17 @@ void Parameters::setDefaults() {
     tarExclude = "^$";
     
     // findexons
-    orfBonusRatio = 0.2;
-    trimSpliceInScope = 30;
+    orfBonusRatio = 0.1;
+    trimSpliceInScope = 90;
     trimSpliceOutScope = 2;
     trimTermOutScope = 45;
-    trimTermInScope = 2;
+    trimTermInScope = 6;
+//    orfBonusRatio = 0.2;
+//    trimSpliceInScope = 30;
+//    trimSpliceOutScope = 2;
+//    trimTermOutScope = 45;
+//    trimTermInScope = 2;
+
 
     lcaRanks = "";
     showTaxLineage = 0;
