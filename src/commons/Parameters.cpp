@@ -2298,7 +2298,7 @@ void Parameters::setDefaults() {
     tarExclude = "^$";
     
     // findexons
-    orfBonusRatio = 10; // 0.2;
+    orfBonusRatio =10; // fix
     trimSpliceInScope = 120; // fix
     trimSpliceOutScope = 2; //fix
     trimTermOutScope = 45; //fix
