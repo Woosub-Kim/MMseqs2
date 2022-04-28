@@ -637,7 +637,7 @@ int findexons(int argc, const char **argv, const Command &command) {
     Parameters &par = Parameters::getInstance();
     par.parseParameters(argc, argv, command, true, 0, 0);
 
-    float orfKeepingBonusRatio = par.orfBonusRatio/100;
+    float orfKeepingBonusRatio = (float)par.orfBonusRatio/100;
     std::cout << orfKeepingBonusRatio << std::endl;
     unsigned int trimmingSpliceSiteInScope = par.trimSpliceInScope;
     unsigned int trimmingSpliceSiteOutScope = par.trimSpliceOutScope;
