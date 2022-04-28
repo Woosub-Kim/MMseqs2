@@ -2299,7 +2299,7 @@ void Parameters::setDefaults() {
     
     // findexons
     orfBonusRatio = 0.1; // 0.2;
-    trimSpliceInScope = 120; // the more the bettter?
+    trimSpliceInScope = 150; // the more the bettter?
     trimSpliceOutScope = 2; //fix
     trimTermOutScope = 45; //fix
     trimTermInScope = 3; // fix
