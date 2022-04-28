@@ -454,8 +454,7 @@ class ExonFinder{
         for(size_t exon=0; exon<exonPath.size(); exon++) {
             bool isForward = exonPath[exon].dbStartPos < exonPath[exon].dbEndPos;
             outScope = trimmingSpliceSiteOutScope;
-            //inScope = std::min((int)(dbLength(exonPath[exon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
-            inScope = (int)(dbLength(exonPath[exon])*maxTrimmingScopeRatio);
+            inScope = std::min((int)(dbLength(exonPath[exon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
             float matchIdentity = exonPath[exon].seqId / matchRatio(exonPath[exon].backtrace);
             bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, 0, trimmingTerminusOutScope);
             if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos){
@@ -544,8 +543,7 @@ class ExonFinder{
         // find GTs
         for(unsigned int trimmedExon=0; trimmedExon<tempExonVec.size(); trimmedExon++){
             bool isForward = tempExonVec[trimmedExon].dbStartPos < tempExonVec[trimmedExon].dbEndPos;
-            //inScope = std::min( (int)(dbLength(tempExonVec[trimmedExon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
-            inScope = (int)(dbLength(tempExonVec[trimmedExon])*maxTrimmingScopeRatio);
+            inScope = std::min( (int)(dbLength(tempExonVec[trimmedExon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
             outScope = trimmingSpliceSiteOutScope;
             if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos){
                 trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
