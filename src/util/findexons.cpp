@@ -545,7 +545,7 @@ class ExonFinder{
         for(unsigned int trimmedExon=0; trimmedExon<tempExonVec.size(); trimmedExon++){
             bool isForward = tempExonVec[trimmedExon].dbStartPos < tempExonVec[trimmedExon].dbEndPos;
             //inScope = std::min( (int)(dbLength(tempExonVec[trimmedExon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
-            inScope = (int)(dbLength(exonPath[exon])*maxTrimmingScopeRatio);
+            inScope = (int)(dbLength(tempExonVec[trimmedExon])*maxTrimmingScopeRatio);
             outScope = trimmingSpliceSiteOutScope;
             if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos){
                 trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
