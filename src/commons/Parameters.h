@@ -632,7 +632,7 @@ public:
     std::string tarExclude;
     
     // findexons
-    float orfBonusRatio;
+    int orfBonusRatio;
     int trimSpliceInScope;
     int trimSpliceOutScope;
     int trimTermOutScope;

@@ -58,7 +58,7 @@ class ExonFinder{
                     unsigned int trimmingTerminusInScope
                 ) {
 //            //temp
-            orfKeepingBonusRatio = 0;
+
             std::sort(exonPath.begin(), exonPath.end(), Matcher::compareByDbkeyAndStrand);
 
             std::vector<ExonCandidates> candidates = createPotentialExonCombinations(exonPath);
@@ -637,7 +637,8 @@ int findexons(int argc, const char **argv, const Command &command) {
     Parameters &par = Parameters::getInstance();
     par.parseParameters(argc, argv, command, true, 0, 0);
 
-    float orfKeepingBonusRatio = par.orfBonusRatio;
+    float orfKeepingBonusRatio = par.orfBonusRatio/100;
+    std::cout << orfKeepingBonusRatio << std::endl;
     unsigned int trimmingSpliceSiteInScope = par.trimSpliceInScope;
     unsigned int trimmingSpliceSiteOutScope = par.trimSpliceOutScope;
     unsigned int trimmingTerminusInScope = par.trimTermInScope;

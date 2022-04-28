@@ -128,7 +128,7 @@ Parameters::Parameters():
         PARAM_STAT(PARAM_STAT_ID, "--stat", "Statistics to be computed", "One of: linecount, mean, doolittle, charges, seqlen, firstline", typeid(std::string), (void *) &stat, ""),
         
         // findexons
-        PARAM_ORF_BONUS_RATIO(PARAM_ORF_BONUS_RATIO_ID, "--orf-bonus-ratio", "ORF bonus ratio", "ratio for bonus score for keeping orf ", typeid(float), &orfBonusRatio, "^[0-9]*(\\.[0-9]+)?$"),
+        PARAM_ORF_BONUS_RATIO(PARAM_ORF_BONUS_RATIO_ID, "--orf-bonus-ratio", "ORF bonus ratio", "ratio for bonus score for keeping orf x% ", typeid(int), &orfBonusRatio, "^[0-9]*$"),
         PARAM_TRIM_SPLICE_IN_SCOPE(PARAM_TRIM_SPLICE_IN_SCOPE_ID, "--trim-splice-in-scope", "Trimming splice in scope", "trimming in scope for proper splicing sites", typeid(int), &trimSpliceInScope, "^[0-9]*$"),
         PARAM_TRIM_SPLICE_OUT_SCOPE(PARAM_TRIM_SPLICE_OUT_SCOPE_ID, "--trim-splice-out-scope", "Trimming splice out scope", "trimming out scope for proper splicing sites", typeid(int), &trimSpliceOutScope,"^[0-9]*$"),
         PARAM_TRIM_TERMINUS_IN_SCOPE(PARAM_TRIM_TERMINUS_IN_SCOPE_ID, "--trim-terminus-in-scope", "Trimming terminus in scope", "trimming in scope for proer sites ofstart and end codons", typeid(int), &trimTermInScope, "^[0-9]*$"),
@@ -2298,7 +2298,7 @@ void Parameters::setDefaults() {
     tarExclude = "^$";
     
     // findexons
-    orfBonusRatio = 0.2; // 0.2;
+    orfBonusRatio = 10; // 0.2;
     trimSpliceInScope = 120; // fix
     trimSpliceOutScope = 2; //fix
     trimTermOutScope = 45; //fix
