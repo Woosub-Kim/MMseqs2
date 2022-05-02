@@ -633,7 +633,6 @@ class ExonFinder{
 
 
 int findexons(int argc, const char **argv, const Command &command) {
-    std::cout << "Args: " << argv << std::endl;
     Parameters &par = Parameters::getInstance();
     par.parseParameters(argc, argv, command, true, 0, 0);
 

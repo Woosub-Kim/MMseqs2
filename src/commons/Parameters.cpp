@@ -2301,8 +2301,9 @@ void Parameters::setDefaults() {
     orfBonusRatio =10; // fix
     trimSpliceInScope = 120; // fix
     trimSpliceOutScope = 2; //fix
-    trimTermOutScope = 45; //fix
     trimTermInScope = 3; // fix
+    trimTermOutScope = 30; //fix
+
 
     lcaRanks = "";
     showTaxLineage = 0;
