@@ -215,7 +215,8 @@ class ExonFinder{
     bool isDonorSitF(char * targetSeq, int index){
         char nt1 = std::toupper(targetSeq[index]);
         char nt2 = std::toupper(targetSeq[index+1]);
-        return  (nt1=='G'&&nt2=='T') || (nt1=='G'&&nt2=='C');
+        //temp
+        return  (nt1=='G'&&nt2=='T') ;//|| (nt1=='G'&&nt2=='C');
     }
     bool isAcceptorSiteR(char * targetSeq, int index){
         char nt1 = std::toupper(targetSeq[index]);
@@ -225,7 +226,8 @@ class ExonFinder{
     bool isDonorSiteR(char * targetSeq, int index){
         char nt1 = std::toupper(targetSeq[index]);
         char nt2 = std::toupper(targetSeq[index+1]);
-        return (nt1=='A' && nt2=='C') || (nt1=='G' && nt2=='C');
+        // temp
+        return (nt1=='A' && nt2=='C');// || (nt1=='G' && nt2=='C');
     }
     bool isStpCodonF(char * targetSeq, int index){
         char nt1 = std::toupper(targetSeq[index+1]);
