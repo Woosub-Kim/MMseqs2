@@ -646,7 +646,7 @@ int findexons(int argc, const char **argv, const Command &command) {
     unsigned int trimmingSpliceSiteOutScope = par.trimSpliceOutScope;
     unsigned int trimmingTerminusInScope = par.trimTermInScope;
     unsigned int trimmingTerminusOutScope = par.trimTermOutScope;
-    float startStopBonus = par.edgeBonusRatio/100;
+    float startStopBonus = (float)par.edgeBonusRatio/100;
 
     const bool touch = (par.preloadMode != Parameters::PRELOAD_MODE_MMAP);
     IndexReader qDbr(par.db1, par.threads,  IndexReader::SRC_SEQUENCES, (touch) ? (IndexReader::PRELOAD_INDEX | IndexReader::PRELOAD_DATA) : 0, (DBReader<unsigned int>::USE_INDEX | DBReader<unsigned int>::USE_DATA) );
