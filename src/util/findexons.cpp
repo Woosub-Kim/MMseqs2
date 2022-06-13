@@ -78,7 +78,7 @@ class ExonFinder{
                     int cost = metStp? COST_MAX : 0;
                     int score1 = queryLength(trimmedExonResult[id]) * trimmedExonResult[id].seqId;
                     int score2 = isFirstExon ? queryOrfLength(trimmedExonResult[id])*startStopBonus : 0;
-                    long score = score1 - cost ;// + score2;
+                    long score = score1 - cost + score2;
                     dpMatrixRow.emplace_back(DpMatrixRow(id,score));
                 }
                 long bestPathScore = INT_MIN;
@@ -100,7 +100,7 @@ class ExonFinder{
                             int score2 = sameOrf ? queryLength(trimmedExonResult[currExon])*orfKeepingBonusRatio:0;
                             int score3 = isLastExon ? queryOrfLength(trimmedExonResult[currExon])*startStopBonus:0;
                             long bestScorePrev = dpMatrixRow[prevExon].pathScore;
-                            long currScoreWithPrev = bestScorePrev - cost + score1 + score2; // +score3;
+                            long currScoreWithPrev = bestScorePrev - cost + score1 + score2 +score3;
                             // update row of currPotentialExon in case of improvement:
                             if (currScoreWithPrev > dpMatrixRow[currExon].pathScore  ) {
                                 dpMatrixRow[currExon].prevPotentialId = prevExon;
