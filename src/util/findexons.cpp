@@ -647,7 +647,7 @@ int findexons(int argc, const char **argv, const Command &command) {
     unsigned int trimmingTerminusInScope = par.trimTermInScope;
     unsigned int trimmingTerminusOutScope = par.trimTermOutScope;
     float startStopBonus = (float)par.edgeBonusRatio/100;
-
+    std::cout<< "ISS" << par.edgeBonusRatio << "\t" << startStopBonus << std::endl;
     const bool touch = (par.preloadMode != Parameters::PRELOAD_MODE_MMAP);
     IndexReader qDbr(par.db1, par.threads,  IndexReader::SRC_SEQUENCES, (touch) ? (IndexReader::PRELOAD_INDEX | IndexReader::PRELOAD_DATA) : 0, (DBReader<unsigned int>::USE_INDEX | DBReader<unsigned int>::USE_DATA) );
     IndexReader tDbr(par.db2, par.threads, IndexReader::SRC_SEQUENCES, (touch) ? (IndexReader::PRELOAD_INDEX | IndexReader::PRELOAD_DATA) : 0, (DBReader<unsigned int>::USE_INDEX | DBReader<unsigned int>::USE_DATA) );
