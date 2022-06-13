@@ -133,6 +133,7 @@ Parameters::Parameters():
         PARAM_TRIM_SPLICE_OUT_SCOPE(PARAM_TRIM_SPLICE_OUT_SCOPE_ID, "--trim-splice-out-scope", "Trimming splice out scope", "trimming out scope for proper splicing sites", typeid(int), &trimSpliceOutScope,"^[0-9]*$"),
         PARAM_TRIM_TERMINUS_IN_SCOPE(PARAM_TRIM_TERMINUS_IN_SCOPE_ID, "--trim-terminus-in-scope", "Trimming terminus in scope", "trimming in scope for proer sites ofstart and end codons", typeid(int), &trimTermInScope, "^[0-9]*$"),
         PARAM_TRIM_TERMINUS_OUT_SCOPE(PARAM_TRIM_TERMINUS_OUT_SCOPE_ID, "--trim-terminus-out-scope", "Trimming terminus out scope", "trimming out scope for proer sites ofstart and end codons", typeid(int), &trimTermOutScope, "^[0-9]*$"),
+        PARAM_EDGE_BONUS_RATIO(PARAM_TRIM_TERMINUS_OUT_SCOPE_ID, "--edge-bonus-ratio", "Start/End exons bonus ratio", "ratio for bonus score for start/end exons x%", typeid(int), &edgeBonusRatio, "^[0-9]*$"),
         //edgeBonusRatio
 
         // linearcluster
