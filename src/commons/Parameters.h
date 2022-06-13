@@ -637,6 +637,7 @@ public:
     int trimSpliceOutScope;
     int trimTermOutScope;
     int trimTermInScope;
+    int edgeBonusRatio;
 
     // for modules that should handle -h themselves
     bool help;
@@ -962,6 +963,7 @@ public:
     PARAMETER(PARAM_TRIM_SPLICE_OUT_SCOPE)
     PARAMETER(PARAM_TRIM_TERMINUS_IN_SCOPE)
     PARAMETER(PARAM_TRIM_TERMINUS_OUT_SCOPE)
+    //edgeBonusRatio
 
     // for modules that should handle -h themselves
     PARAMETER(PARAM_HELP)

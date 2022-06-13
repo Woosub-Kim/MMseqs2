@@ -133,6 +133,7 @@ Parameters::Parameters():
         PARAM_TRIM_SPLICE_OUT_SCOPE(PARAM_TRIM_SPLICE_OUT_SCOPE_ID, "--trim-splice-out-scope", "Trimming splice out scope", "trimming out scope for proper splicing sites", typeid(int), &trimSpliceOutScope,"^[0-9]*$"),
         PARAM_TRIM_TERMINUS_IN_SCOPE(PARAM_TRIM_TERMINUS_IN_SCOPE_ID, "--trim-terminus-in-scope", "Trimming terminus in scope", "trimming in scope for proer sites ofstart and end codons", typeid(int), &trimTermInScope, "^[0-9]*$"),
         PARAM_TRIM_TERMINUS_OUT_SCOPE(PARAM_TRIM_TERMINUS_OUT_SCOPE_ID, "--trim-terminus-out-scope", "Trimming terminus out scope", "trimming out scope for proer sites ofstart and end codons", typeid(int), &trimTermOutScope, "^[0-9]*$"),
+        //edgeBonusRatio
 
         // linearcluster
         PARAM_KMER_PER_SEQ(PARAM_KMER_PER_SEQ_ID, "--kmer-per-seq", "k-mers per sequence", "k-mers per sequence", typeid(int), (void *) &kmersPerSequence, "^[1-9]{1}[0-9]*$", MMseqsParameter::COMMAND_CLUSTLINEAR),
@@ -1260,6 +1261,7 @@ Parameters::Parameters():
     findexons.push_back(&PARAM_TRIM_SPLICE_OUT_SCOPE);
     findexons.push_back(&PARAM_TRIM_TERMINUS_IN_SCOPE);
     findexons.push_back(&PARAM_TRIM_TERMINUS_OUT_SCOPE);
+    //edgeBonusRatio
     
     //checkSaneEnvironment();
     setDefaults();
@@ -2303,7 +2305,7 @@ void Parameters::setDefaults() {
     trimSpliceOutScope = 2; //fix
     trimTermInScope = 3; // fix
     trimTermOutScope = 30; //fix
-
+    edgeBonusRatio = 5;
 
     lcaRanks = "";
     showTaxLineage = 0;
