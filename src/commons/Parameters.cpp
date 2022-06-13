@@ -1262,6 +1262,7 @@ Parameters::Parameters():
     findexons.push_back(&PARAM_TRIM_SPLICE_OUT_SCOPE);
     findexons.push_back(&PARAM_TRIM_TERMINUS_IN_SCOPE);
     findexons.push_back(&PARAM_TRIM_TERMINUS_OUT_SCOPE);
+    findexons.push_back(&PARAM_EDGE_BONUS_RATIO);
     //edgeBonusRatio
     
     //checkSaneEnvironment();
