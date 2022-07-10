@@ -2307,7 +2307,7 @@ void Parameters::setDefaults() {
     trimSpliceOutScope = 2; //fix
     trimTermInScope = 3; // fix
     trimTermOutScope = 30; //fix
-    edgeBonusRatio = 5;
+    edgeBonusRatio = 0;
 
     lcaRanks = "";
     showTaxLineage = 0;
