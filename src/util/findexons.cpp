@@ -707,6 +707,8 @@ int findexons(int argc, const char **argv, const Command &command) {
                     orfResults.clear();
                     if(orfScore>maxScore){
                         optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
+                        //temp
+                        std::cout << resIdx << "\t" << orfScore << std::endl;
                         maxScore = orfScore;
                     }
                     orfResults.emplace_back(inputAlignments[resIdx]);
@@ -720,9 +722,13 @@ int findexons(int argc, const char **argv, const Command &command) {
                 orfResults.clear();
                 if(orfScore>maxScore){
                     optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
+                    // temp
+                    std::cout << resIdx << "\t" << orfScore << std::endl;
                     maxScore = orfScore;
                 }
             }
+
+            // output
             if(optimalSolutionWithScore.size()>0) {
                 // last vector in optimalSolutionWithScore contains highest scoring solution
                 size_t optimestPathSize = optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates.size();
