@@ -692,7 +692,6 @@ int findexons(int argc, const char **argv, const Command &command) {
             long maxScore = 0;
             optimalSolutionWithScore.clear();
             for(size_t resIdx = 0; resIdx <inputAlignments.size(); resIdx++){
-            for(size_t resIdx = 0; resIdx <inputAlignments.size(); resIdx++){
                 // to make sure that query position is never reversed, only db position can be reversed
                 // In default we search only on the formward frame 1,2,3 so this function is not called
                 // It is only important if search also on the backward frame!
@@ -724,6 +723,7 @@ int findexons(int argc, const char **argv, const Command &command) {
                 if(orfScore>maxScore){
                     optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
                     // temp
+                    
                     std::cout << "<" << inputAlignments.size()-1 << " : " << orfScore << ">" << std::endl;
                     maxScore = orfScore;
                 }
