@@ -723,7 +723,7 @@ int findexons(int argc, const char **argv, const Command &command) {
                 if(orfScore>maxScore){
                     optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
                     // temp
-                    std::cout << resIdx << "\t" << orfScore << std::endl;
+                    std::cout << inputAlignments.size()-1 << "\t" << orfScore << std::endl;
                     maxScore = orfScore;
                 }
             }
