@@ -710,6 +710,7 @@ int findexons(int argc, const char **argv, const Command &command) {
                         //temp
                         int length = 0;
                         for (size_t optExonIdx = 0; optExonIdx < optimalExonSolution.size(); optExonIdx++ ) {
+                            std::cout << length + abs(optimalExonSolution[optExonIdx].qEndPos - optimalExonSolution[optExonIdx].qStartPos) + 1 << std::endl;
                             length = length + abs(optimalExonSolution[optExonIdx].qEndPos - optimalExonSolution[optExonIdx].qStartPos) + 1;
                         }
                         std::cout << "<" << queryKey << " : " << orfScore << " , " << length << ">" << std::endl;
@@ -730,6 +731,7 @@ int findexons(int argc, const char **argv, const Command &command) {
                     int length = 0;
                     for (size_t optExonIdx = 0; optExonIdx < optimalExonSolution.size(); optExonIdx++ ) {
                         length = length + abs(optimalExonSolution[optExonIdx].qEndPos - optimalExonSolution[optExonIdx].qStartPos) + 1;
+                        std::cout << length + abs(optimalExonSolution[optExonIdx].qEndPos - optimalExonSolution[optExonIdx].qStartPos) + 1 << std::endl;
                     }
                     std::cout << "<" << queryKey << " : " << orfScore << " , " << optimalExonSolution[optimalExonSolution.size()-1].qEndPos - optimalExonSolution[0].qStartPos + 1 << ">" << std::endl;
                     maxScore = orfScore;
