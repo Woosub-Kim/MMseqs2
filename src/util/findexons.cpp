@@ -56,10 +56,7 @@ class ExonFinder{
                     unsigned int trimmingSpliceSiteOutScope,
                     unsigned int trimmingTerminusOutScope,
                     unsigned int trimmingTerminusInScope,
-                    float startStopBonus
                 ) {
-//            //temp
-
             std::sort(exonPath.begin(), exonPath.end(), Matcher::compareByDbkeyAndStrand);
 
             std::vector<ExonCandidates> candidates = createPotentialExonCombinations(exonPath);
@@ -77,8 +74,7 @@ class ExonFinder{
                     bool metStp = trimmedExonResult[id].qEndPos>trimmedExonResult[id].queryOrfEndPos;
                     int cost = metStp? COST_MAX : 0;
                     int score1 = queryLength(trimmedExonResult[id]) * trimmedExonResult[id].seqId;
-                    int score2 = isFirstExon ? queryOrfLength(trimmedExonResult[id])*startStopBonus : 0;
-                    long score = score1 - cost + score2;
+                    long score = score1 - cost;
                     dpMatrixRow.emplace_back(DpMatrixRow(id,score));
                 }
                 long bestPathScore = INT_MIN;
@@ -98,9 +94,8 @@ class ExonFinder{
                             int cost = trimmedExonResult[currExon].qEndPos>trimmedExonResult[currExon].queryOrfEndPos ? COST_MAX : 0;
                             int score1 = queryLength(trimmedExonResult[currExon])*trimmedExonResult[currExon].seqId;
                             int score2 = sameOrf ? queryLength(trimmedExonResult[currExon])*orfKeepingBonusRatio:0;
-                            int score3 = isLastExon ? queryOrfLength(trimmedExonResult[currExon])*startStopBonus:0;
                             long bestScorePrev = dpMatrixRow[prevExon].pathScore;
-                            long currScoreWithPrev = bestScorePrev - cost + score1 + score2 +score3;
+                            long currScoreWithPrev = bestScorePrev - cost + score1 + score2;
                             // update row of currPotentialExon in case of improvement:
                             if (currScoreWithPrev > dpMatrixRow[currExon].pathScore  ) {
                                 dpMatrixRow[currExon].prevPotentialId = prevExon;
@@ -647,7 +642,7 @@ int findexons(int argc, const char **argv, const Command &command) {
     unsigned int trimmingSpliceSiteOutScope = par.trimSpliceOutScope;
     unsigned int trimmingTerminusInScope = par.trimTermInScope;
     unsigned int trimmingTerminusOutScope = par.trimTermOutScope;
-    float startStopBonus = (float)par.edgeBonusRatio/100;
+    float falsePositiveFilteringRatio = (float)par.filteringRatio/100;
 
     const bool touch = (par.preloadMode != Parameters::PRELOAD_MODE_MMAP);
     IndexReader qDbr(par.db1, par.threads,  IndexReader::SRC_SEQUENCES, (touch) ? (IndexReader::PRELOAD_INDEX | IndexReader::PRELOAD_DATA) : 0, (DBReader<unsigned int>::USE_INDEX | DBReader<unsigned int>::USE_DATA) );
@@ -703,17 +698,20 @@ int findexons(int argc, const char **argv, const Command &command) {
                 if(querySameOrf){
                     orfResults.emplace_back(inputAlignments[resIdx]);
                 }else{
-                    exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore, orfKeepingBonusRatio, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope, startStopBonus);
+                    exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore, orfKeepingBonusRatio, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope);
                     orfResults.clear();
                     if(orfScore>maxScore){
-                        optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
-                        //temp
                         int length = 0;
                         for (size_t optExonIdx = 0; optExonIdx < optimalExonSolution.size(); optExonIdx++ ) {
                             length = length + abs(optimalExonSolution[optExonIdx].qEndPos - optimalExonSolution[optExonIdx].qStartPos) + 1;
                         }
-                        std::cout << "<" << queryKey << " : " << orfScore << " , " << length << ">" << std::endl;
+                        float scoreLengthRatio = (float)orfScore/length;
+                        if (scoreLengthRatio > falsePositiveFilteringRatio) {
+                            optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
+//                            maxScore = orfScore;
+                        }
                         maxScore = orfScore;
+
                     }
                     orfResults.emplace_back(inputAlignments[resIdx]);
                     prevQueryOrfStartPos = inputAlignments[resIdx].queryOrfStartPos;
@@ -722,17 +720,20 @@ int findexons(int argc, const char **argv, const Command &command) {
             }
             //last orf info -> optimal
             if(orfResults.size() > 0){
-                exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore, orfKeepingBonusRatio, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope, startStopBonus);
+                exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore, orfKeepingBonusRatio, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope);
                 orfResults.clear();
                 if(orfScore>maxScore){
-                    optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
-                    // temp
                     int length = 0;
                     for (size_t optExonIdx = 0; optExonIdx < optimalExonSolution.size(); optExonIdx++ ) {
                         length = length + abs(optimalExonSolution[optExonIdx].qEndPos - optimalExonSolution[optExonIdx].qStartPos) + 1;
                     }
-                    std::cout << "<" << queryKey << " : " << orfScore << " , " << optimalExonSolution[optimalExonSolution.size()-1].qEndPos - optimalExonSolution[0].qStartPos + 1 << ">" << std::endl;
+                    float scoreLengthRatio = (float)orfScore/length;
+                    if (scoreLengthRatio > falsePositiveFilteringRatio) {
+                        optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
+//                        maxScore = orfScore;
+                    }
                     maxScore = orfScore;
+
                 }
             }
 
