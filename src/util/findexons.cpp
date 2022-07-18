@@ -55,7 +55,7 @@ class ExonFinder{
                     unsigned int trimmingSpliceSiteInScope,
                     unsigned int trimmingSpliceSiteOutScope,
                     unsigned int trimmingTerminusOutScope,
-                    unsigned int trimmingTerminusInScope,
+                    unsigned int trimmingTerminusInScope
                 ) {
             std::sort(exonPath.begin(), exonPath.end(), Matcher::compareByDbkeyAndStrand);
 
