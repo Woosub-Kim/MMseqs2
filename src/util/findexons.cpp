@@ -70,7 +70,7 @@ class ExonFinder{
                 findExonBoundaries(trimmedExonResult, candidate.candidates, tempExonVec, thread_idx, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope);
                 //to set up <dpMatrixRow>
                 for (size_t id = 0; id < trimmedExonResult.size(); id++) {
-                    bool isFirstExon = trimmedExonResult[id].queryOrfStartPos==trimmedExonResult[id].qStartPos;
+//                    bool isFirstExon = trimmedExonResult[id].queryOrfStartPos==trimmedExonResult[id].qStartPos;
                     bool metStp = trimmedExonResult[id].qEndPos>trimmedExonResult[id].queryOrfEndPos;
                     int cost = metStp? COST_MAX : 0;
                     int score1 = queryLength(trimmedExonResult[id]) * trimmedExonResult[id].seqId;
@@ -708,9 +708,9 @@ int findexons(int argc, const char **argv, const Command &command) {
                         float scoreLengthRatio = (float)orfScore/length;
                         if (scoreLengthRatio > falsePositiveFilteringRatio) {
                             optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
-//                            maxScore = orfScore;
+                            maxScore = orfScore;
                         }
-                        maxScore = orfScore;
+//                        maxScore = orfScore;
 
                     }
                     orfResults.emplace_back(inputAlignments[resIdx]);
@@ -730,9 +730,9 @@ int findexons(int argc, const char **argv, const Command &command) {
                     float scoreLengthRatio = (float)orfScore/length;
                     if (scoreLengthRatio > falsePositiveFilteringRatio) {
                         optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
-//                        maxScore = orfScore;
+                        maxScore = orfScore;
                     }
-                    maxScore = orfScore;
+//                    maxScore = orfScore;
 
                 }
             }
