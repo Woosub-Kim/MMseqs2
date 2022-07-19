@@ -708,9 +708,9 @@ int findexons(int argc, const char **argv, const Command &command) {
                         float scoreLengthRatio = (float)orfScore/length;
                         if (scoreLengthRatio > falsePositiveFilteringRatio) {
                             optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
-                            maxScore = orfScore;
+//                            maxScore = orfScore;
                         }
-//                        maxScore = orfScore;
+                        maxScore = orfScore;
 
                     }
                     orfResults.emplace_back(inputAlignments[resIdx]);
@@ -730,9 +730,9 @@ int findexons(int argc, const char **argv, const Command &command) {
                     float scoreLengthRatio = (float)orfScore/length;
                     if (scoreLengthRatio > falsePositiveFilteringRatio) {
                         optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
-                        maxScore = orfScore;
+//                        maxScore = orfScore;
                     }
-//                    maxScore = orfScore;
+                    maxScore = orfScore;
 
                 }
             }
