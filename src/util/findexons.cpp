@@ -483,7 +483,7 @@ class ExonFinder{
                         dbPos = dbPos - 3;
                     }
                 } else {
-                    // TEMP
+                    // TEMP No qtartPos
 //                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope;
                     int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope + exonPath[exon].qStartPos;
                     int originStart = exonPath[exon].dbStartPos;
