@@ -467,6 +467,7 @@ class ExonFinder{
                     int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
                     int originStart = exonPath[exon].dbStartPos;
                     std::cout<<"f: "<<exonPath[exon].qStartPos<<"\t"<<exonPath[exon].queryOrfStartPos<<std::endl;
+                    // temp
                     while(dbPos >= exonPath[exon].dbStartPos - trimmingTerminusOutScope) {
                         if (isMetCodonF(targetSeq, dbPos)){
                             outScope = 0;
@@ -484,11 +485,11 @@ class ExonFinder{
                 } else {
                     int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope;
                     int originStart = exonPath[exon].dbStartPos;
+                    // temp
                     std::cout<<"b: "<<exonPath[exon].qStartPos<<"\t"<<exonPath[exon].queryOrfStartPos<<std::endl;
                     while (dbPos <= exonPath[exon].dbStartPos  + trimmingTerminusOutScope) {
                         if (isMetCodonR(targetSeq, dbPos)){
                             outScope = 0;
-                            // temp
                             if (originStart > dbPos){
                                 std::pair<std::string, int> cigarQueryPos = cigarQueryPosUpdateAcceptorSite(exonPath[exon].backtrace, dbPos - originStart);
                                 exonPath[exon].backtrace = cigarQueryPos.first;
