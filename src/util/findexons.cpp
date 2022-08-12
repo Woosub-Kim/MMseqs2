@@ -556,6 +556,8 @@ class ExonFinder{
         for(unsigned int trimmedExon=0; trimmedExon<tempExonVec.size(); trimmedExon++){
             bool isForward = tempExonVec[trimmedExon].dbStartPos < tempExonVec[trimmedExon].dbEndPos;
             inScope = std::min( (int)(dbLength(tempExonVec[trimmedExon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
+            // TEMP
+            // outScope = trimmingSpliceSiteOutScope;
             outScope = trimmingSpliceSiteOutScope + tempExonVec[trimmedExon].qEndPos%3;
             if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos){
                 trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
@@ -565,7 +567,7 @@ class ExonFinder{
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
                     int dbPos = tempExonVec[trimmedExon].dbEndPos;
-                    // TEMP ...
+                    // TEMP
                     while(dbPos <= tempExonVec[trimmedExon].dbEndPos + trimmingTerminusOutScope) {
                         if (isStpCodonF(targetSeq, dbPos)){
                             outScope = 0;
@@ -578,7 +580,7 @@ class ExonFinder{
                     }
                 } else {
                     int dbPos = tempExonVec[trimmedExon].dbEndPos;
-                    // TEMP ...
+                    // TEMP
                     while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - trimmingTerminusOutScope) {
                         if (isStpCodonR(targetSeq, dbPos)){
                             outScope = 0;
