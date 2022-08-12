@@ -466,10 +466,10 @@ class ExonFinder{
                 if (isForward){
                     int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
                     int originStart = exonPath[exon].dbStartPos;
+                    std::cout<<"f: "<<exonPath[exon].qStartPos<<"\t"<<exonPath[exon].queryOrfStartPos<<std::endl;
                     while(dbPos >= exonPath[exon].dbStartPos - trimmingTerminusOutScope) {
                         if (isMetCodonF(targetSeq, dbPos)){
                             outScope = 0;
-                            // temp
                             if (originStart < dbPos){
                                 std::pair<std::string, int> cigarQueryPos = cigarQueryPosUpdateAcceptorSite(exonPath[exon].backtrace, originStart - dbPos);
                                 exonPath[exon].backtrace = cigarQueryPos.first;
@@ -484,6 +484,7 @@ class ExonFinder{
                 } else {
                     int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope;
                     int originStart = exonPath[exon].dbStartPos;
+                    std::cout<<"b: "<<exonPath[exon].qStartPos<<"\t"<<exonPath[exon].queryOrfStartPos<<std::endl;
                     while (dbPos <= exonPath[exon].dbStartPos  + trimmingTerminusOutScope) {
                         if (isMetCodonR(targetSeq, dbPos)){
                             outScope = 0;
@@ -562,11 +563,9 @@ class ExonFinder{
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
                             tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
                             tempExonVec.emplace_back(tempExonVec[trimmedExon]);
-                            // temp
-//                            break;
+                            break;
                         }
-//                        dbPos = dbPos + 3;
-                        dbPos = dbPos + 1;
+                        dbPos = dbPos + 3;
                     }
                 } else {
                     int dbPos = tempExonVec[trimmedExon].dbEndPos;
@@ -576,11 +575,9 @@ class ExonFinder{
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
                             tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
                             tempExonVec.emplace_back(tempExonVec[trimmedExon]);
-                            // temp
-//                            break;
+                            break;
                         }
-//                        dbPos = dbPos - 3;
-                        dbPos = dbPos - 1;
+                        dbPos = dbPos - 3;
                     }
                 }
             }
