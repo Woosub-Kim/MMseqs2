@@ -557,7 +557,7 @@ class ExonFinder{
             bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, 0, trimmingTerminusOutScope);
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
-                    // TEMP
+                    // TEMP %3
 //                    int dbPos = tempExonVec[trimmedExon].dbEndPos;
                     int dbPos = tempExonVec[trimmedExon].dbEndPos + 2 -  tempExonVec[trimmedExon].qEndPos%3;
                     while(dbPos <= tempExonVec[trimmedExon].dbEndPos + trimmingTerminusOutScope) {
