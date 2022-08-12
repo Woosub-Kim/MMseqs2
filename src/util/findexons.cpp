@@ -464,7 +464,7 @@ class ExonFinder{
             }
             if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
                 if (isForward){
-                    // temp
+                    // Temp
 //                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
                     int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope + exonPath[exon].qStartPos%3;
                     int originStart = exonPath[exon].dbStartPos;
@@ -483,7 +483,7 @@ class ExonFinder{
                          dbPos = dbPos - 3;
                     }
                 } else {
-                    // temp
+                    // Temp
 //                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope;
                     int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope - exonPath[exon].qStartPos%3;
                     int originStart = exonPath[exon].dbStartPos;
@@ -558,7 +558,9 @@ class ExonFinder{
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
                     int dbPos = tempExonVec[trimmedExon].dbEndPos;
-                    while(dbPos <= tempExonVec[trimmedExon].dbEndPos + trimmingTerminusOutScope) {
+                    // temp tttt
+//                    while(dbPos <= tempExonVec[trimmedExon].dbEndPos + trimmingTerminusOutScope) {
+                    while(dbPos <= tempExonVec[trimmedExon].dbEndPos + trimmingTerminusOutScope + tempExonVec[trimmedExon].qEndPos%3) {
                         if (isStpCodonF(targetSeq, dbPos)){
                             outScope = 0;
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
@@ -570,7 +572,9 @@ class ExonFinder{
                     }
                 } else {
                     int dbPos = tempExonVec[trimmedExon].dbEndPos;
-                    while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - trimmingTerminusOutScope) {
+                    // temp tttt
+//                    while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - trimmingTerminusOutScope) {
+                    while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - trimmingTerminusOutScope - tempExonVec[trimmedExon].qEndPos%3) {
                         if (isStpCodonR(targetSeq, dbPos)){
                             outScope = 0;
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
