@@ -466,7 +466,7 @@ class ExonFinder{
                 if (isForward){
                     // TEMP
 //                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
-                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope - exonPath[exon].qtartPos%3;
+                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope - exonPath[exon].qStartPos%3;
                     int originStart = exonPath[exon].dbStartPos;
                     while(dbPos >= exonPath[exon].dbStartPos - trimmingTerminusOutScope) {
                         if (isMetCodonF(targetSeq, dbPos)){
