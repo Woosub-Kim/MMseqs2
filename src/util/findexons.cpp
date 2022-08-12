@@ -479,9 +479,7 @@ class ExonFinder{
                             exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
                             tempExonVec.emplace_back(exonPath[exon]);
                         }
-                        // temp
-                        // dbPos = dbPos - 3;
-                        dbPos = dbPos - 1;
+                         dbPos = dbPos - 3;
                     }
                 } else {
                     int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope;
@@ -499,9 +497,7 @@ class ExonFinder{
                             exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
                             tempExonVec.emplace_back(exonPath[exon]);
                         }
-                        // temp
-                        // dbPos = dbPos + 3;
-                        dbPos = dbPos + 1;
+                         dbPos = dbPos + 3;
                     }
                 }
             }
@@ -566,9 +562,10 @@ class ExonFinder{
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
                             tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
                             tempExonVec.emplace_back(tempExonVec[trimmedExon]);
-                            break;
+//                            break;
                         }
-                        dbPos = dbPos + 3;
+//                        dbPos = dbPos + 3;
+                        dbPos = dbPos + 1;
                     }
                 } else {
                     int dbPos = tempExonVec[trimmedExon].dbEndPos;
@@ -578,9 +575,10 @@ class ExonFinder{
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
                             tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
                             tempExonVec.emplace_back(tempExonVec[trimmedExon]);
-                            break;
+//                            break;
                         }
-                        dbPos = dbPos - 3;
+//                        dbPos = dbPos - 3;
+                        dbPos = dbPos - 1;
                     }
                 }
             }
