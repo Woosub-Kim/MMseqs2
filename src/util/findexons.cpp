@@ -478,8 +478,8 @@ class ExonFinder{
                             exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
                             tempExonVec.emplace_back(exonPath[exon]);
                         }
-                        //temp
-//                        dbPos = dbPos - 3;
+                        // temp
+                        // dbPos = dbPos - 3;
                         dbPos = dbPos - 1;
                     }
                 } else {
@@ -497,8 +497,8 @@ class ExonFinder{
                             exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
                             tempExonVec.emplace_back(exonPath[exon]);
                         }
-                        //temp
-//                        dbPos = dbPos + 3;
+                        // temp
+                        // dbPos = dbPos + 3;
                         dbPos = dbPos + 1;
                     }
                 }
