@@ -458,7 +458,7 @@ class ExonFinder{
             inScope = std::min((int)(dbLength(exonPath[exon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
             float matchIdentity = exonPath[exon].seqId / matchRatio(exonPath[exon].backtrace);
             bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, 0, trimmingTerminusOutScope);
-            // TEMP
+            // TEMP ...
             isFirst = true;
             if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos){
                 tempExonVec.emplace_back(exonPath[exon]);
@@ -466,7 +466,7 @@ class ExonFinder{
             }
             if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
                 if (isForward){
-                    // Temp
+                    // Temp ...
 //                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
                     int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope + exonPath[exon].qStartPos%3;
                     int originStart = exonPath[exon].dbStartPos;
@@ -485,7 +485,7 @@ class ExonFinder{
                          dbPos = dbPos - 3;
                     }
                 } else {
-                    // Temp
+                    // TEMP ...
 //                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope;
                     int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope - exonPath[exon].qStartPos%3;
                     int originStart = exonPath[exon].dbStartPos;
@@ -557,7 +557,7 @@ class ExonFinder{
                 outScope = 0;
             }
             bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, 0, trimmingTerminusOutScope);
-            // temp
+            // TEMP ...
             isLast = true;
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
