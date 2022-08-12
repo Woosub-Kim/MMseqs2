@@ -562,6 +562,7 @@ class ExonFinder{
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
                             tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
                             tempExonVec.emplace_back(tempExonVec[trimmedExon]);
+                            // temp
 //                            break;
                         }
 //                        dbPos = dbPos + 3;
@@ -575,6 +576,7 @@ class ExonFinder{
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
                             tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
                             tempExonVec.emplace_back(tempExonVec[trimmedExon]);
+                            // temp
 //                            break;
                         }
 //                        dbPos = dbPos - 3;
