@@ -469,8 +469,9 @@ class ExonFinder{
                     while(dbPos >= exonPath[exon].dbStartPos - trimmingTerminusOutScope) {
                         if (isMetCodonF(targetSeq, dbPos)){
                             outScope = 0;
-                            if (true){
-                            //if (originStart < dbPos){
+                            // temp
+
+                            if (originStart < dbPos){
                                 std::pair<std::string, int> cigarQueryPos = cigarQueryPosUpdateAcceptorSite(exonPath[exon].backtrace, originStart - dbPos);
                                 exonPath[exon].backtrace = cigarQueryPos.first;
                                 exonPath[exon].seqId = matchRatio(exonPath[exon].backtrace) * matchIdentity;
@@ -479,7 +480,8 @@ class ExonFinder{
                             exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
                             tempExonVec.emplace_back(exonPath[exon]);
                         }
-                        dbPos = dbPos - 3;
+//                        dbPos = dbPos - 3;
+                        dbPos = dbPos - 1;
                     }
                 } else {
                     int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope;
@@ -487,8 +489,9 @@ class ExonFinder{
                     while (dbPos <= exonPath[exon].dbStartPos  + trimmingTerminusOutScope) {
                         if (isMetCodonR(targetSeq, dbPos)){
                             outScope = 0;
-                            if (true){
-                            //if (originStart > dbPos){
+                            // temp
+
+                            if (originStart > dbPos){
                                 std::pair<std::string, int> cigarQueryPos = cigarQueryPosUpdateAcceptorSite(exonPath[exon].backtrace, dbPos - originStart);
                                 exonPath[exon].backtrace = cigarQueryPos.first;
                                 exonPath[exon].seqId = matchRatio(exonPath[exon].backtrace) * matchIdentity;
@@ -497,7 +500,8 @@ class ExonFinder{
                             exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
                             tempExonVec.emplace_back(exonPath[exon]);
                         }
-                        dbPos = dbPos + 3;
+//                        dbPos = dbPos + 3;
+                        dbPos = dbPos + 1;
                     }
                 }
             }
