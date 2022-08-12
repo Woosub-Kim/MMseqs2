@@ -464,10 +464,10 @@ class ExonFinder{
             }
             if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
                 if (isForward){
-                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
-                    int originStart = exonPath[exon].dbStartPos;
-                    std::cout<<"f: "<<exonPath[exon].qStartPos<<"\t"<<exonPath[exon].queryOrfStartPos<<std::endl;
                     // temp
+//                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
+                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope + exonPath[exon].qStartPos%3;
+                    int originStart = exonPath[exon].dbStartPos;
                     while(dbPos >= exonPath[exon].dbStartPos - trimmingTerminusOutScope) {
                         if (isMetCodonF(targetSeq, dbPos)){
                             outScope = 0;
@@ -483,10 +483,10 @@ class ExonFinder{
                          dbPos = dbPos - 3;
                     }
                 } else {
-                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope;
-                    int originStart = exonPath[exon].dbStartPos;
                     // temp
-                    std::cout<<"b: "<<exonPath[exon].qStartPos<<"\t"<<exonPath[exon].queryOrfStartPos<<std::endl;
+//                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope;
+                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope - exonPath[exon].qStartPos%3;
+                    int originStart = exonPath[exon].dbStartPos;
                     while (dbPos <= exonPath[exon].dbStartPos  + trimmingTerminusOutScope) {
                         if (isMetCodonR(targetSeq, dbPos)){
                             outScope = 0;
