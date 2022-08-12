@@ -464,8 +464,8 @@ class ExonFinder{
             }
             if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
                 if (isForward){
-
-                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
+                    // TEMP
+//                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
                     int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope - exonPath[exon].qtartPos%3;
                     int originStart = exonPath[exon].dbStartPos;
                     while(dbPos >= exonPath[exon].dbStartPos - trimmingTerminusOutScope) {
@@ -483,7 +483,7 @@ class ExonFinder{
                         dbPos = dbPos - 3;
                     }
                 } else {
-
+                    // TEMP
 //                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope;
                     int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope + exonPath[exon].qStartPos;
                     int originStart = exonPath[exon].dbStartPos;
@@ -557,7 +557,7 @@ class ExonFinder{
             bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, 0, trimmingTerminusOutScope);
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
-
+                    // TEMP
 //                    int dbPos = tempExonVec[trimmedExon].dbEndPos;
                     int dbPos = tempExonVec[trimmedExon].dbEndPos + 2 -  tempExonVec[trimmedExon].qEndPos%3;
                     while(dbPos <= tempExonVec[trimmedExon].dbEndPos + trimmingTerminusOutScope) {
@@ -571,7 +571,7 @@ class ExonFinder{
                         dbPos = dbPos + 3;
                     }
                 } else {
-
+                    // TEMP
 //                    int dbPos = tempExonVec[trimmedExon].dbEndPos;
                     int dbPos = tempExonVec[trimmedExon].dbEndPos - 2 + tempExonVec[trimmedExon].qEndPos%3;
                     while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - trimmingTerminusOutScope) {
