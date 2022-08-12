@@ -558,7 +558,7 @@ class ExonFinder{
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
                     int dbPos = tempExonVec[trimmedExon].dbEndPos;
-                    // TEMP
+                    // TEMP ...
 //                    while(dbPos <= tempExonVec[trimmedExon].dbEndPos + trimmingTerminusOutScope) {
                     while(dbPos <= tempExonVec[trimmedExon].dbEndPos + trimmingTerminusOutScope + tempExonVec[trimmedExon].qEndPos%3) {
                         if (isStpCodonF(targetSeq, dbPos)){
@@ -572,7 +572,7 @@ class ExonFinder{
                     }
                 } else {
                     int dbPos = tempExonVec[trimmedExon].dbEndPos;
-                    // TEMP
+                    // TEMP ...
 //                    while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - trimmingTerminusOutScope) {
                     while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - trimmingTerminusOutScope - tempExonVec[trimmedExon].qEndPos%3) {
                         if (isStpCodonR(targetSeq, dbPos)){
