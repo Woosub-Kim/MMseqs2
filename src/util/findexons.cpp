@@ -485,7 +485,7 @@ class ExonFinder{
                 } else {
                     // TEMP No qtartPos
 //                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope;
-                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope + exonPath[exon].qStartPos;
+                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope + exonPath[exon].qStartPos%3;
                     int originStart = exonPath[exon].dbStartPos;
                     while (dbPos <= exonPath[exon].dbStartPos  + trimmingTerminusOutScope) {
                         if (isMetCodonR(targetSeq, dbPos)){
