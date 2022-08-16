@@ -503,6 +503,10 @@ class ExonFinder{
                     }
                 }
             }
+            // TEMP !!!
+            if (isFirst){
+                break;
+            }
             if (isForward) {
                 int currDbPos = exonPath[exon].dbStartPos - outScope;
                 int overlapLength = -outScope;
@@ -557,9 +561,9 @@ class ExonFinder{
             bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, 0, trimmingTerminusOutScope);
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
-                    // TEMP %3
+                    // TEMP
 //                    int dbPos = tempExonVec[trimmedExon].dbEndPos;
-                    int dbPos = tempExonVec[trimmedExon].dbEndPos + 2 -  tempExonVec[trimmedExon].qEndPos%3;
+                    int dbPos = tempExonVec[trimmedExon].dbEndPos -1 -  tempExonVec[trimmedExon].qEndPos%3;
                     while(dbPos <= tempExonVec[trimmedExon].dbEndPos + trimmingTerminusOutScope) {
                         if (isStpCodonF(targetSeq, dbPos)){
                             outScope = 0;
@@ -573,7 +577,7 @@ class ExonFinder{
                 } else {
                     // TEMP
 //                    int dbPos = tempExonVec[trimmedExon].dbEndPos;
-                    int dbPos = tempExonVec[trimmedExon].dbEndPos - 2 + tempExonVec[trimmedExon].qEndPos%3;
+                    int dbPos = tempExonVec[trimmedExon].dbEndPos +1 + tempExonVec[trimmedExon].qEndPos%3;
                     while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - trimmingTerminusOutScope) {
                         if (isStpCodonR(targetSeq, dbPos)){
                             outScope = 0;
@@ -587,6 +591,9 @@ class ExonFinder{
                 }
             }
             float matchIdentity = tempExonVec[trimmedExon].seqId/matchRatio(tempExonVec[trimmedExon].backtrace);
+            if (isLast){
+                break;
+            }
             if(isForward){
                 int currDbPos = tempExonVec[trimmedExon].dbEndPos - inScope;
                 int overlapLength = inScope;
