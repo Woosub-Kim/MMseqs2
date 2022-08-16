@@ -453,7 +453,7 @@ class ExonFinder{
         char * targetSeq = targetSequence(exonPath[0].dbKey, thread_idx);
         // find AGs
         for(size_t exon=0; exon<exonPath.size(); exon++) {
-            // TEMP
+            // TEMP ...
             trimmingTerminusOutScope = trimmingTerminusOutScope + exonPath[exon].qStartPos - exonPath[exon].queryOrfStartPos;
             bool isForward = exonPath[exon].dbStartPos < exonPath[exon].dbEndPos;
             outScope = trimmingSpliceSiteOutScope;
