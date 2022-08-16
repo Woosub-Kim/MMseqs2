@@ -457,18 +457,16 @@ class ExonFinder{
             outScope = trimmingSpliceSiteOutScope;
             inScope = std::min((int)(dbLength(exonPath[exon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
             float matchIdentity = exonPath[exon].seqId / matchRatio(exonPath[exon].backtrace);
-            // TEMP
-//            bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, 0, trimmingTerminusOutScope);
             bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, trimmingTerminusInScope, trimmingTerminusOutScope);
             if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos){
                 tempExonVec.emplace_back(exonPath[exon]);
                 outScope = 0;
             }
-            if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
-                // TEMP !!!!???
-                exonPath[exon].dbStartPos = exonPath[exon].dbOrfStartPos;
-                exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
-                tempExonVec.emplace_back(exonPath[exon]);
+            // TEMP
+            exonPath[exon].dbStartPos = exonPath[exon].dbOrfStartPos;
+            exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
+            tempExonVec.emplace_back(exonPath[exon]);
+//            if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
 //                if (isForward){
 //                    // TEMP
 ////                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
@@ -509,6 +507,7 @@ class ExonFinder{
 //                    }
 //                }
 //            }
+
             if (isForward) {
                 int currDbPos = exonPath[exon].dbStartPos - outScope;
                 int overlapLength = -outScope;
@@ -560,8 +559,6 @@ class ExonFinder{
                 trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
                 outScope = 0;
             }
-            // TEMP
-//            bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, 0, trimmingTerminusOutScope);
             bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, trimmingTerminusInScope, trimmingTerminusOutScope);
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
