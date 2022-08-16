@@ -462,10 +462,6 @@ class ExonFinder{
                 tempExonVec.emplace_back(exonPath[exon]);
                 outScope = 0;
             }
-            // TEMP !!!???
-            exonPath[exon].dbStartPos = exonPath[exon].dbOrfStartPos;
-            exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
-            tempExonVec.emplace_back(exonPath[exon]);
             if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
                 if (isForward){
                     // TEMP
@@ -507,6 +503,10 @@ class ExonFinder{
                     }
                 }
             }
+            // TEMP !!!???
+            exonPath[exon].dbStartPos = exonPath[exon].dbOrfStartPos;
+            exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
+            tempExonVec.emplace_back(exonPath[exon]);
 
             if (isForward) {
                 int currDbPos = exonPath[exon].dbStartPos - outScope;
