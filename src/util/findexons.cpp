@@ -453,6 +453,7 @@ class ExonFinder{
         char * targetSeq = targetSequence(exonPath[0].dbKey, thread_idx);
         // find AGs
         for(size_t exon=0; exon<exonPath.size(); exon++) {
+            bool startExonFlag = false;
             bool isForward = exonPath[exon].dbStartPos < exonPath[exon].dbEndPos;
             outScope = trimmingSpliceSiteOutScope;
             inScope = std::min((int)(dbLength(exonPath[exon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
@@ -481,6 +482,7 @@ class ExonFinder{
                             exonPath[exon].dbStartPos = dbPos;
                             exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
                             tempExonVec.emplace_back(exonPath[exon]);
+                            startExonFlag = true;
                         }
                         dbPos = dbPos - 3;
                     }
@@ -505,6 +507,11 @@ class ExonFinder{
                     }
                 }
             }
+            // TEMP!!!
+            if (startExonFlag){
+                break;
+            }
+
             if (isForward) {
                 int currDbPos = exonPath[exon].dbStartPos - outScope;
                 int overlapLength = -outScope;
