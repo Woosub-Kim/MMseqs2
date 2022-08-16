@@ -503,10 +503,10 @@ class ExonFinder{
                     }
                 }
             }
-            // TEMP 
-            exonPath[exon].dbStartPos = exonPath[exon].dbOrfStartPos;
-            exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
-            tempExonVec.emplace_back(exonPath[exon]);
+//            // TEMP
+//            exonPath[exon].dbStartPos = exonPath[exon].dbOrfStartPos;
+//            exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
+//            tempExonVec.emplace_back(exonPath[exon]);
 
             if (isForward) {
                 int currDbPos = exonPath[exon].dbStartPos - outScope;
