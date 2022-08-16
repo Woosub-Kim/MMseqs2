@@ -503,7 +503,7 @@ class ExonFinder{
                     }
                 }
             }
-            // TEMP !!!
+            // TEMP !!!???
             if (isFirst){
                 break;
             }
