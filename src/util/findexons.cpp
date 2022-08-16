@@ -457,9 +457,9 @@ class ExonFinder{
             outScope = trimmingSpliceSiteOutScope;
             inScope = std::min((int)(dbLength(exonPath[exon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
             float matchIdentity = exonPath[exon].seqId / matchRatio(exonPath[exon].backtrace);
-            bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, 0, trimmingTerminusOutScope);
-            // temp
-            bool isLast = lastExon(exonPath[exon].qEndPos, exonPath[exon].queryOrfEndPos, 0, trimmingTerminusOutScope);
+            
+//            bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, 0, trimmingTerminusOutScope);
+            bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, trimmingTerminusInScope, trimmingTerminusOutScope);
             if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos){
                 tempExonVec.emplace_back(exonPath[exon]);
                 outScope = 0;
@@ -504,10 +504,6 @@ class ExonFinder{
                         dbPos = dbPos + 3;
                     }
                 }
-            }
-            // TEMP !!!
-            if (isFirst && isLast){
-                break;
             }
             if (isForward) {
                 int currDbPos = exonPath[exon].dbStartPos - outScope;
@@ -560,9 +556,9 @@ class ExonFinder{
                 trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
                 outScope = 0;
             }
-            bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, 0, trimmingTerminusOutScope);
-            // temp
-            bool isFirst = firstExon(tempExonVec[trimmedExon].qStartPos, tempExonVec[trimmedExon].queryOrfStartPos, 0, trimmingTerminusOutScope);
+
+//            bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, 0, trimmingTerminusOutScope);
+            bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, trimmingTerminusInScope, trimmingTerminusOutScope);
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
                     // TEMP
@@ -595,10 +591,6 @@ class ExonFinder{
                 }
             }
             float matchIdentity = tempExonVec[trimmedExon].seqId/matchRatio(tempExonVec[trimmedExon].backtrace);
-            // TEMP !!!
-            if (isLast && isFirst){
-                break;
-            }
             if(isForward){
                 int currDbPos = tempExonVec[trimmedExon].dbEndPos - inScope;
                 int overlapLength = inScope;
