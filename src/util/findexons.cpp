@@ -507,7 +507,7 @@ class ExonFinder{
                     }
                 }
             }
-            // TEMP!!!
+            // TEMP!!!???
             if (startExonFlag){
                 break;
             }
