@@ -453,7 +453,6 @@ class ExonFinder{
         char * targetSeq = targetSequence(exonPath[0].dbKey, thread_idx);
         // find AGs
         for(size_t exon=0; exon<exonPath.size(); exon++) {
-            bool startExonFlag = false;
             bool isForward = exonPath[exon].dbStartPos < exonPath[exon].dbEndPos;
             outScope = trimmingSpliceSiteOutScope;
             inScope = std::min((int)(dbLength(exonPath[exon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
@@ -466,52 +465,50 @@ class ExonFinder{
                 outScope = 0;
             }
             if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
-                if (isForward){
-                    // TEMP
-//                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
-                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope - exonPath[exon].qStartPos%3;
-                    int originStart = exonPath[exon].dbStartPos;
-                    while(dbPos >= exonPath[exon].dbStartPos - trimmingTerminusOutScope) {
-                        if (isMetCodonF(targetSeq, dbPos)){
-                            outScope = 0;
-                            if (originStart < dbPos){
-                                std::pair<std::string, int> cigarQueryPos = cigarQueryPosUpdateAcceptorSite(exonPath[exon].backtrace, originStart - dbPos);
-                                exonPath[exon].backtrace = cigarQueryPos.first;
-                                exonPath[exon].seqId = matchRatio(exonPath[exon].backtrace) * matchIdentity;
-                            }
-                            exonPath[exon].dbStartPos = dbPos;
-                            exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
-                            tempExonVec.emplace_back(exonPath[exon]);
-                            startExonFlag = true;
-                        }
-                        dbPos = dbPos - 3;
-                    }
-                } else {
-                    // TEMP No qtartPos
-//                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope;
-                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope + exonPath[exon].qStartPos%3;
-                    int originStart = exonPath[exon].dbStartPos;
-                    while (dbPos <= exonPath[exon].dbStartPos  + trimmingTerminusOutScope) {
-                        if (isMetCodonR(targetSeq, dbPos)){
-                            outScope = 0;
-                            if (originStart > dbPos){
-                                std::pair<std::string, int> cigarQueryPos = cigarQueryPosUpdateAcceptorSite(exonPath[exon].backtrace, dbPos - originStart);
-                                exonPath[exon].backtrace = cigarQueryPos.first;
-                                exonPath[exon].seqId = matchRatio(exonPath[exon].backtrace) * matchIdentity;
-                            }
-                            exonPath[exon].dbStartPos = dbPos;
-                            exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
-                            tempExonVec.emplace_back(exonPath[exon]);
-                        }
-                        dbPos = dbPos + 3;
-                    }
-                }
-            }
-            // TEMP!!!???
-            if (startExonFlag){
-                break;
-            }
-
+                // TEMP
+                exonPath[exon].dbStartPos = exonPath[exon].dbOrfStartPos;
+                exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
+                tempExonVec.emplace_back(exonPath[exon]);
+//                if (isForward){
+//                    // TEMP
+////                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
+//                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope - exonPath[exon].qStartPos%3;
+//                    int originStart = exonPath[exon].dbStartPos;
+//                    while(dbPos >= exonPath[exon].dbStartPos - trimmingTerminusOutScope) {
+//                        if (isMetCodonF(targetSeq, dbPos)){
+//                            outScope = 0;
+//                            if (originStart < dbPos){
+//                                std::pair<std::string, int> cigarQueryPos = cigarQueryPosUpdateAcceptorSite(exonPath[exon].backtrace, originStart - dbPos);
+//                                exonPath[exon].backtrace = cigarQueryPos.first;
+//                                exonPath[exon].seqId = matchRatio(exonPath[exon].backtrace) * matchIdentity;
+//                            }
+//                            exonPath[exon].dbStartPos = dbPos;
+//                            exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
+//                            tempExonVec.emplace_back(exonPath[exon]);
+//                        }
+//                        dbPos = dbPos - 3;
+//                    }
+//                } else {
+//                    // TEMP No qtartPos
+////                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope;
+//                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope + exonPath[exon].qStartPos%3;
+//                    int originStart = exonPath[exon].dbStartPos;
+//                    while (dbPos <= exonPath[exon].dbStartPos  + trimmingTerminusOutScope) {
+//                        if (isMetCodonR(targetSeq, dbPos)){
+//                            outScope = 0;
+//                            if (originStart > dbPos){
+//                                std::pair<std::string, int> cigarQueryPos = cigarQueryPosUpdateAcceptorSite(exonPath[exon].backtrace, dbPos - originStart);
+//                                exonPath[exon].backtrace = cigarQueryPos.first;
+//                                exonPath[exon].seqId = matchRatio(exonPath[exon].backtrace) * matchIdentity;
+//                            }
+//                            exonPath[exon].dbStartPos = dbPos;
+//                            exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
+//                            tempExonVec.emplace_back(exonPath[exon]);
+//                        }
+//                        dbPos = dbPos + 3;
+//                    }
+//                }
+//            }
             if (isForward) {
                 int currDbPos = exonPath[exon].dbStartPos - outScope;
                 int overlapLength = -outScope;
