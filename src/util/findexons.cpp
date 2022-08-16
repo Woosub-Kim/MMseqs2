@@ -503,7 +503,7 @@ class ExonFinder{
                     }
                 }
             }
-//            // TEMP
+//            // TEMP ....
 //            exonPath[exon].dbStartPos = exonPath[exon].dbOrfStartPos;
 //            exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
 //            tempExonVec.emplace_back(exonPath[exon]);
