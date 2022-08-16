@@ -454,7 +454,7 @@ class ExonFinder{
         // find AGs
         for(size_t exon=0; exon<exonPath.size(); exon++) {
             // TEMP ...
-            trimmingTerminusOutScope = trimmingTerminusOutScope + exonPath[exon].qStartPos - exonPath[exon].queryOrfStartPos;
+//            trimmingTerminusOutScope = trimmingTerminusOutScope + exonPath[exon].qStartPos - exonPath[exon].queryOrfStartPos;
             bool isForward = exonPath[exon].dbStartPos < exonPath[exon].dbEndPos;
             outScope = trimmingSpliceSiteOutScope;
             inScope = std::min((int)(dbLength(exonPath[exon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
