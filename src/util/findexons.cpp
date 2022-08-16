@@ -462,7 +462,7 @@ class ExonFinder{
                 tempExonVec.emplace_back(exonPath[exon]);
                 outScope = 0;
             }
-            // TEMP
+            // TEMP ??? !!!!
             exonPath[exon].dbStartPos = exonPath[exon].dbOrfStartPos;
             exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
             tempExonVec.emplace_back(exonPath[exon]);
