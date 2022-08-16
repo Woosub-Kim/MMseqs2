@@ -591,6 +591,7 @@ class ExonFinder{
                 }
             }
             float matchIdentity = tempExonVec[trimmedExon].seqId/matchRatio(tempExonVec[trimmedExon].backtrace);
+            // TEMP !!!
             if (isLast){
                 break;
             }
