@@ -458,10 +458,10 @@ class ExonFinder{
             float matchIdentity = exonPath[exon].seqId / matchRatio(exonPath[exon].backtrace);
             bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, trimmingTerminusInScope, trimmingTerminusOutScope);
             // TEMP ...
-//            if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos){
-//                tempExonVec.emplace_back(exonPath[exon]);
-//                outScope = 0;
-//            }
+            if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos && ((isForward&&isMetCodonF(targetSeq, exonPath[exon].dbStartPos))||(!isForward&&isMetCodonR(targetSeq, exonPath[exon].dbStartPos)))){
+                tempExonVec.emplace_back(exonPath[exon]);
+                outScope = 0;
+            }
             if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
                 if (isForward){
 //                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
