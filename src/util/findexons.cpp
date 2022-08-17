@@ -463,7 +463,6 @@ class ExonFinder{
                 outScope = 0;
             }
             if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
-                std::cout<< "S" << exonPath[exon].qStartPos - exonPath[exon].queryOrfStartPos << std::endl;
                 if (isForward){
                     // TEMP
 //                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
@@ -504,11 +503,6 @@ class ExonFinder{
                     }
                 }
             }
-//            // TEMP ....
-//            exonPath[exon].dbStartPos = exonPath[exon].dbOrfStartPos;
-//            exonPath[exon].qStartPos = exonPath[exon].queryOrfStartPos;
-//            tempExonVec.emplace_back(exonPath[exon]);
-
             if (isForward) {
                 int currDbPos = exonPath[exon].dbStartPos - outScope;
                 int overlapLength = -outScope;
@@ -561,7 +555,6 @@ class ExonFinder{
                 outScope = 0;
             }
             bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, trimmingTerminusInScope, trimmingTerminusOutScope);
-            std::cout<< "End" << tempExonVec[trimmedExon].queryOrfEndPos - tempExonVec[trimmedExon].qEndPos << std::endl;
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
                     // TEMP
