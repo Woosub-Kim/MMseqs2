@@ -457,7 +457,6 @@ class ExonFinder{
             inScope = std::min((int)(dbLength(exonPath[exon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
             float matchIdentity = exonPath[exon].seqId / matchRatio(exonPath[exon].backtrace);
             bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, trimmingTerminusInScope, trimmingTerminusOutScope);
-            // TEMP
             if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos && ((isForward&&isMetCodonF(targetSeq, exonPath[exon].dbStartPos))||(!isForward&&isMetCodonR(targetSeq, exonPath[exon].dbStartPos)))){
                 tempExonVec.emplace_back(exonPath[exon]);
                 outScope = 0;
@@ -548,7 +547,7 @@ class ExonFinder{
             bool isForward = tempExonVec[trimmedExon].dbStartPos < tempExonVec[trimmedExon].dbEndPos;
             inScope = std::min( (int)(dbLength(tempExonVec[trimmedExon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
             outScope = trimmingSpliceSiteOutScope;
-            if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos){
+            if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos && ((isForward&&isStpCodonF(targetSeq,tempExonVec[trimmedExon].dbEndPos)) || (!isForward&&isStpCodonR(targetSeq,tempExonVec[trimmedExon].dbEndPos)))){
                 trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
                 outScope = 0;
             }
