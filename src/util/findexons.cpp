@@ -552,14 +552,14 @@ class ExonFinder{
                 trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
                 outScope = 0;
             }
-            bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, trimmingTerminusInScope, trimmingTerminusOutScope+120);
+            bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, trimmingTerminusInScope, trimmingTerminusOutScope+90);
             // TEST
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
                     // TEMP
 //                    int dbPos = tempExonVec[trimmedExon].dbEndPos;
                     int dbPos = tempExonVec[trimmedExon].dbEndPos -1 -  tempExonVec[trimmedExon].qEndPos%3;
-                    while(dbPos <= tempExonVec[trimmedExon].dbEndPos + trimmingTerminusOutScope+120) {
+                    while(dbPos <= tempExonVec[trimmedExon].dbEndPos + trimmingTerminusOutScope+90) {
                         if (isStpCodonF(targetSeq, dbPos)){
                             outScope = 0;
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
@@ -573,7 +573,7 @@ class ExonFinder{
                     // TEMP
 //                    int dbPos = tempExonVec[trimmedExon].dbEndPos;
                     int dbPos = tempExonVec[trimmedExon].dbEndPos +1 + tempExonVec[trimmedExon].qEndPos%3;
-                    while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - trimmingTerminusOutScope-120) {
+                    while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - trimmingTerminusOutScope-90) {
                         if (isStpCodonR(targetSeq, dbPos)){
                             outScope = 0;
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
