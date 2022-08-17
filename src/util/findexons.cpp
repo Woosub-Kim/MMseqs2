@@ -463,6 +463,7 @@ class ExonFinder{
                 outScope = 0;
             }
             if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
+                std::cout<< "S" << exonPath[exon].qStartPos - exonPath[exon].queryOrfStartPos << std::endl;
                 if (isForward){
                     // TEMP
 //                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
@@ -560,6 +561,7 @@ class ExonFinder{
                 outScope = 0;
             }
             bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, trimmingTerminusInScope, trimmingTerminusOutScope);
+            std::cout<< "E" << tempExonVec[trimmedExon].queryOrfEndPos - tempExonVec[trimmedExon].qEndPos << std::endl;
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
                     // TEMP
