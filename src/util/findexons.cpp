@@ -446,8 +446,7 @@ class ExonFinder{
                 int trimmingTerminusOutScope,
                 int trimmingTerminusInScope
             ) {
-        // ISSUE
-        float maxTrimmingScopeRatio = 1; //0.6;
+        float maxTrimmingScopeRatio = 1;
         int inScope;
         int outScope;
         char * targetSeq = targetSequence(exonPath[0].dbKey, thread_idx);
@@ -458,13 +457,12 @@ class ExonFinder{
             inScope = std::min((int)(dbLength(exonPath[exon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
             float matchIdentity = exonPath[exon].seqId / matchRatio(exonPath[exon].backtrace);
             bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, trimmingTerminusInScope, trimmingTerminusOutScope);
-            if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos){
-                tempExonVec.emplace_back(exonPath[exon]);
-                outScope = 0;
-            }
+//            if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos){
+//                tempExonVec.emplace_back(exonPath[exon]);
+//                outScope = 0;
+//            }
             if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
                 if (isForward){
-                    // TEMP
 //                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
                     int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope - exonPath[exon].qStartPos%3;
                     int originStart = exonPath[exon].dbStartPos;
@@ -483,7 +481,6 @@ class ExonFinder{
                         dbPos = dbPos - 3;
                     }
                 } else {
-                    // TEMP No qtartPos
 //                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope;
                     int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope + exonPath[exon].qStartPos%3;
                     int originStart = exonPath[exon].dbStartPos;
@@ -550,10 +547,10 @@ class ExonFinder{
             bool isForward = tempExonVec[trimmedExon].dbStartPos < tempExonVec[trimmedExon].dbEndPos;
             inScope = std::min( (int)(dbLength(tempExonVec[trimmedExon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
             outScope = trimmingSpliceSiteOutScope;
-            if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos){
-                trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
-                outScope = 0;
-            }
+//            if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos){
+//                trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
+//                outScope = 0;
+//            }
             bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, trimmingTerminusInScope, trimmingTerminusOutScope);
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
