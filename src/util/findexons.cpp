@@ -457,15 +457,6 @@ class ExonFinder{
             inScope = std::min((int)(dbLength(exonPath[exon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
             float matchIdentity = exonPath[exon].seqId / matchRatio(exonPath[exon].backtrace);
             bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, trimmingTerminusInScope, trimmingTerminusOutScope);
-            if (exonPath[exon].qStartPos==1){
-                if ((isForward&&isMetCodonF(targetSeq, exonPath[exon].dbStartPos)) || (!isForward&&isMetCodonR(targetSeq, exonPath[exon].dbStartPos))){
-                    std::cout<<"1 base" << std::endl;
-                }
-
-            }
-            if (exonPath[exon].qStartPos==0){
-                std::cout<<"1 base" << std::endl;
-            }
             if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos && ((isForward&&isMetCodonF(targetSeq,exonPath[exon].dbStartPos))||(!isForward&&isMetCodonR(targetSeq,exonPath[exon].dbStartPos)))){
                 tempExonVec.emplace_back(exonPath[exon]);
                 outScope = 0;
