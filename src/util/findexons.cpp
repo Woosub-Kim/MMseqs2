@@ -463,6 +463,9 @@ class ExonFinder{
                 //
                 inScope = 0;
             }
+            if (exonPath[exon].qStartPos==exonPath[exon].queryOrfStartPos){
+                std::cout <<  exonPath[exon].qStartPos << " base" << std::endl;
+            }
             if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
                 if (isForward){
 //                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
