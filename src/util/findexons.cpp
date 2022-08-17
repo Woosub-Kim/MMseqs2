@@ -556,6 +556,8 @@ class ExonFinder{
             if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos&&((isForward&&isStpCodonF(targetSeq,tempExonVec[trimmedExon].dbEndPos))||(!isForward&&isStpCodonR(targetSeq,tempExonVec[trimmedExon].dbEndPos)))){
                 trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
                 outScope = 0;
+                //
+                inScope = 0;
             }
             bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, trimmingTerminusInScope, trimmingTerminusOutScope);
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
@@ -566,6 +568,8 @@ class ExonFinder{
                     while(dbPos <= tempExonVec[trimmedExon].dbEndPos + trimmingTerminusOutScope) {
                         if (isStpCodonF(targetSeq, dbPos)){
                             outScope = 0;
+                            //
+                            inScope = 0;
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
                             tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
                             tempExonVec.emplace_back(tempExonVec[trimmedExon]);
@@ -580,6 +584,8 @@ class ExonFinder{
                     while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - trimmingTerminusOutScope) {
                         if (isStpCodonR(targetSeq, dbPos)){
                             outScope = 0;
+                            //
+                            inScope = 0;
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
                             tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
                             tempExonVec.emplace_back(tempExonVec[trimmedExon]);
