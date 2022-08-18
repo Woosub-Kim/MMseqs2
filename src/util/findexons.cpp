@@ -464,7 +464,7 @@ class ExonFinder{
             }
             if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
                 if (isForward){
-                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;// - exonPath[exon].qStartPos%3;
+                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope - exonPath[exon].qStartPos%3;
                     int originStart = exonPath[exon].dbStartPos;
                     while(dbPos >= exonPath[exon].dbStartPos - trimmingTerminusOutScope) {
                         if (isMetCodonF(targetSeq, dbPos)){
@@ -481,7 +481,7 @@ class ExonFinder{
                         dbPos = dbPos - 3;
                     }
                 } else {
-                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope;// + exonPath[exon].qStartPos%3;
+                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope + exonPath[exon].qStartPos%3;
                     int originStart = exonPath[exon].dbStartPos;
                     while (dbPos <= exonPath[exon].dbStartPos  + trimmingTerminusOutScope) {
                         if (isMetCodonR(targetSeq, dbPos)){
