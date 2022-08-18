@@ -516,7 +516,7 @@ class ExonFinder{
                 }
             }
             if (tempFlag)
-                continue
+                continue;
             if (isForward) {
                 int currDbPos = exonPath[exon].dbStartPos - outScope;
                 int overlapLength = -outScope;
@@ -614,7 +614,7 @@ class ExonFinder{
                 }
             }
             if (tempFlag)
-                continue
+                continue;
             float matchIdentity = tempExonVec[trimmedExon].seqId/matchRatio(tempExonVec[trimmedExon].backtrace);
             if(isForward){
                 int currDbPos = tempExonVec[trimmedExon].dbEndPos - inScope;
