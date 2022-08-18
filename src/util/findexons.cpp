@@ -500,7 +500,7 @@ class ExonFinder{
                 }
             }
             // pass finding spicing sites
-            if (isStartCodonFound || isFirst)
+            if (isStartCodonFound)
                 continue;
             if (isForward) {
                 int currDbPos = exonPath[exon].dbStartPos - outScope;
