@@ -464,9 +464,9 @@ class ExonFinder{
             }
             if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
                 if (isForward){
-                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
+//                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope;
                     // 0 base
-//                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope - exonPath[exon].qStartPos%3;
+                    int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope - exonPath[exon].qStartPos%3;
                     int originStart = exonPath[exon].dbStartPos;
                     while(dbPos >= exonPath[exon].dbStartPos - trimmingTerminusOutScope) {
                         if (isMetCodonF(targetSeq, dbPos)){
@@ -483,9 +483,9 @@ class ExonFinder{
                         dbPos = dbPos - 3;
                     }
                 } else {
-                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope;
+//                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope;
                     // 0 base
-//                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope + exonPath[exon].qStartPos%3;
+                    int dbPos = exonPath[exon].dbStartPos - trimmingTerminusInScope + exonPath[exon].qStartPos%3;
                     int originStart = exonPath[exon].dbStartPos;
                     while (dbPos <= exonPath[exon].dbStartPos  + trimmingTerminusOutScope) {
                         if (isMetCodonR(targetSeq, dbPos)){
@@ -561,9 +561,9 @@ class ExonFinder{
             bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, trimmingTerminusInScope, trimmingTerminusOutScope);
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
-                    int dbPos = tempExonVec[trimmedExon].dbEndPos;
+//                    int dbPos = tempExonVec[trimmedExon].dbEndPos;
                     // 0 base
-//                    int dbPos = tempExonVec[trimmedExon].dbEndPos -1 -  tempExonVec[trimmedExon].qEndPos%3;
+                    int dbPos = tempExonVec[trimmedExon].dbEndPos -1 -  tempExonVec[trimmedExon].qEndPos%3;
                     while(dbPos <= tempExonVec[trimmedExon].dbEndPos + trimmingTerminusOutScope) {
                         if (isStpCodonF(targetSeq, dbPos)){
                             isStpCodonFound = true;
@@ -575,9 +575,9 @@ class ExonFinder{
                         dbPos = dbPos + 3;
                     }
                 } else {
-                    int dbPos = tempExonVec[trimmedExon].dbEndPos;
+//                    int dbPos = tempExonVec[trimmedExon].dbEndPos;
                     // 0 base
-//                    int dbPos = tempExonVec[trimmedExon].dbEndPos +1 + tempExonVec[trimmedExon].qEndPos%3;
+                    int dbPos = tempExonVec[trimmedExon].dbEndPos +1 + tempExonVec[trimmedExon].qEndPos%3;
                     while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - trimmingTerminusOutScope) {
                         if (isStpCodonR(targetSeq, dbPos)){
                             isStpCodonFound = true;
