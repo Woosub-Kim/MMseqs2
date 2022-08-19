@@ -462,6 +462,9 @@ class ExonFinder{
                 tempExonVec.emplace_back(exonPath[exon]);
                 isStartCodonFound = true;
             }
+            // TEMP
+            trimmingTerminusOutScope = trimmingTerminusOutScope/exonPath[exon].seqId;
+            trimmingTerminusOutScope -= trimmingTerminusOutScope%3;
             if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
                 if (isForward){
                     int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope - exonPath[exon].qStartPos%3;
@@ -550,10 +553,14 @@ class ExonFinder{
             inScope = std::min( (int)(dbLength(tempExonVec[trimmedExon])*maxTrimmingScopeRatio), trimmingSpliceSiteInScope);
             outScope = trimmingSpliceSiteOutScope;
             bool isStpCodonFound = false;
+            float matchIdentity = tempExonVec[trimmedExon].seqId/matchRatio(tempExonVec[trimmedExon].backtrace);
             if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos&&((isForward&&isStpCodonF(targetSeq,tempExonVec[trimmedExon].dbEndPos))||(!isForward&&isStpCodonR(targetSeq,tempExonVec[trimmedExon].dbEndPos)))){
                 trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
                 isStpCodonFound = true;
             }
+            // TEMP
+            trimmingTerminusOutScope = trimmingTerminusOutScope/tempExonVec[trimmedExon].seqId;
+            trimmingTerminusOutScope -= trimmingTerminusOutScope%3;
             bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, trimmingTerminusInScope, trimmingTerminusOutScope);
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
@@ -584,7 +591,6 @@ class ExonFinder{
             }
             if (isStpCodonFound)
                 continue;
-            float matchIdentity = tempExonVec[trimmedExon].seqId/matchRatio(tempExonVec[trimmedExon].backtrace);
             if(isForward){
                 int currDbPos = tempExonVec[trimmedExon].dbEndPos - inScope;
                 int overlapLength = inScope;
