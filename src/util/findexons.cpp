@@ -558,6 +558,21 @@ class ExonFinder{
                 trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
                 isStpCodonFound = true;
             }
+            int score = queryLength(tempExonVec[trimmedExon]);
+            int dbPos = isForward ? (tempExonVec[trimmedExon].dbEndPos -1 - tempExonVec[trimmedExon].dbEndPos%3 ) : (tempExonVec[trimmedExon].dbEndPos +1 + tempExonVec[trimmedExon].dbEndPos%3);
+            while (score > 0){
+                if (isForward&&isStpCodonF(targetSeq, dbPos)) || (!isForward&&isStpCodonR(targetSeq, dbPos){
+                    isStpCodonFound = true;
+                    tempExonVec[trimmedExon].dbEndPos = dbPos;
+                    tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
+                    tempExonVec.emplace_back(tempExonVec[trimmedExon]);
+                    break;
+                }
+                score -= 3;
+                dbPos = isForward ? dbPos+3 : dbPos-3;
+            }
+
+
 //            if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
 //                if (isForward){
 //                    int dbPos = tempExonVec[trimmedExon].dbEndPos -1 -  tempExonVec[trimmedExon].qEndPos%3;
