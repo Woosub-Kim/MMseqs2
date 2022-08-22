@@ -551,7 +551,7 @@ class ExonFinder{
             outScope = trimmingSpliceSiteOutScope;
             bool isStpCodonFound = false;
             float matchIdentity = tempExonVec[trimmedExon].seqId/matchRatio(tempExonVec[trimmedExon].backtrace);
-            trimmingTerminusOutScope = tempExonVec[trimmedExon].queryOrfEndPos-tempExonVec[trimmedExon].qEndPos;
+            trimmingTerminusOutScope = (int)queryOrfLength(tempExonVec[trimmedExon])*0.1;
             trimmingTerminusOutScope = trimmingTerminusOutScope - trimmingTerminusOutScope%3;
             std::cout<<trimmingTerminusOutScope<<std::endl;
             if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos&&((isForward&&isStpCodonF(targetSeq,tempExonVec[trimmedExon].dbEndPos))||(!isForward&&isStpCodonR(targetSeq,tempExonVec[trimmedExon].dbEndPos)))){
