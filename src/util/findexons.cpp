@@ -463,8 +463,8 @@ class ExonFinder{
                 isStartCodonFound = true;
             }
             // TEMP
-            trimmingTerminusOutScope = trimmingTerminusOutScope/exonPath[exon].seqId;
-            trimmingTerminusOutScope -= trimmingTerminusOutScope%3;
+//            trimmingTerminusOutScope = trimmingTerminusOutScope/exonPath[exon].seqId;
+//            trimmingTerminusOutScope -= trimmingTerminusOutScope%3;
             if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
                 if (isForward){
                     int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope - exonPath[exon].qStartPos%3;
@@ -559,8 +559,8 @@ class ExonFinder{
                 isStpCodonFound = true;
             }
             // TEMP
-            trimmingTerminusOutScope = trimmingTerminusOutScope/tempExonVec[trimmedExon].seqId;
-            trimmingTerminusOutScope -= trimmingTerminusOutScope%3;
+//            trimmingTerminusOutScope = trimmingTerminusOutScope/tempExonVec[trimmedExon].seqId;
+//            trimmingTerminusOutScope -= trimmingTerminusOutScope%3;
             bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, trimmingTerminusInScope, trimmingTerminusOutScope);
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
