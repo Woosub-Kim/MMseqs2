@@ -552,13 +552,14 @@ class ExonFinder{
             bool isStpCodonFound = false;
             float matchIdentity = tempExonVec[trimmedExon].seqId/matchRatio(tempExonVec[trimmedExon].backtrace);
             std::cout<<queryOrfLength(tempExonVec[trimmedExon])<<std::endl;
-            trimmingTerminusOutScope = (int)queryOrfLength(tempExonVec[trimmedExon])*0.05;
-            trimmingTerminusOutScope = trimmingTerminusOutScope - trimmingTerminusOutScope%3;
+            bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, trimmingTerminusInScope, trimmingTerminusOutScope);
+            int findStpCodonScope = tempExonVec[trimmedExon].queryOrfEndPos - tempExonVec[trimmedExon].qEndPos+3;
+            findStpCodonScope -= findStpCodonScope%3;
+
             if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos&&((isForward&&isStpCodonF(targetSeq,tempExonVec[trimmedExon].dbEndPos))||(!isForward&&isStpCodonR(targetSeq,tempExonVec[trimmedExon].dbEndPos)))){
                 trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
                 isStpCodonFound = true;
             }
-            bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, trimmingTerminusInScope, trimmingTerminusOutScope);
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
                     int dbPos = tempExonVec[trimmedExon].dbEndPos -1 -  tempExonVec[trimmedExon].qEndPos%3;
