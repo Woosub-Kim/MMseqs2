@@ -561,6 +561,7 @@ class ExonFinder{
             int score = queryLength(tempExonVec[trimmedExon]);
             int dbPos = isForward ? (tempExonVec[trimmedExon].dbEndPos -1 - tempExonVec[trimmedExon].dbEndPos%3 ) : (tempExonVec[trimmedExon].dbEndPos +1 + tempExonVec[trimmedExon].dbEndPos%3);
             while (score > 0){
+                std::cout<<score<<std::endl;
                 if ((isForward&&isStpCodonF(targetSeq, dbPos)) || (!isForward&&isStpCodonR(targetSeq, dbPos))){
                     isStpCodonFound = true;
                     tempExonVec[trimmedExon].dbEndPos = dbPos;
