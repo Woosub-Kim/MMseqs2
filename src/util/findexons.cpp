@@ -551,11 +551,9 @@ class ExonFinder{
             outScope = trimmingSpliceSiteOutScope;
             bool isStpCodonFound = false;
             float matchIdentity = tempExonVec[trimmedExon].seqId/matchRatio(tempExonVec[trimmedExon].backtrace);
-            std::cout<<queryOrfLength(tempExonVec[trimmedExon])<<std::endl;
             bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, trimmingTerminusInScope, trimmingTerminusOutScope);
             int findStpCodonScope = tempExonVec[trimmedExon].queryOrfEndPos - tempExonVec[trimmedExon].qEndPos+3;
             findStpCodonScope -= findStpCodonScope%3;
-
             if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos&&((isForward&&isStpCodonF(targetSeq,tempExonVec[trimmedExon].dbEndPos))||(!isForward&&isStpCodonR(targetSeq,tempExonVec[trimmedExon].dbEndPos)))){
                 trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
                 isStpCodonFound = true;
@@ -563,7 +561,7 @@ class ExonFinder{
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
                     int dbPos = tempExonVec[trimmedExon].dbEndPos -1 -  tempExonVec[trimmedExon].qEndPos%3;
-                    while(dbPos <= tempExonVec[trimmedExon].dbEndPos + trimmingTerminusOutScope) {
+                    while(dbPos <= tempExonVec[trimmedExon].dbEndPos + findStpCodonScope){ // trimmingTerminusOutScope) {
                         if (isStpCodonF(targetSeq, dbPos)){
                             isStpCodonFound = true;
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
@@ -575,7 +573,7 @@ class ExonFinder{
                     }
                 } else {
                     int dbPos = tempExonVec[trimmedExon].dbEndPos +1 + tempExonVec[trimmedExon].qEndPos%3;
-                    while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - trimmingTerminusOutScope) {
+                    while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - findStpCodonScope){ // trimmingTerminusOutScope) {
                         if (isStpCodonR(targetSeq, dbPos)){
                             isStpCodonFound = true;
                             tempExonVec[trimmedExon].dbEndPos = dbPos;
