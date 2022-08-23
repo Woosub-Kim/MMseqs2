@@ -461,6 +461,7 @@ class ExonFinder{
             // temp
             int findStartCodonScope = (int)dbLength(exonPath[exon])*0.08+3;
             findStartCodonScope -= findStartCodonScope%3;
+            findStartCodonScope = std::max(findStartCodonScope, trimmingTerminusOutScope)
             firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, trimmingTerminusInScope, findStartCodonScope);
 
             if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos && ((isForward&&isMetCodonF(targetSeq,exonPath[exon].dbStartPos))||(!isForward&&isMetCodonR(targetSeq,exonPath[exon].dbStartPos)))){
@@ -560,6 +561,7 @@ class ExonFinder{
             // temp
             int findStpCodonScope = (int)dbLength(tempExonVec[trimmedExon])*0.08 +3;
             findStpCodonScope -= findStpCodonScope%3;
+            findStpCodonScope = std::max(findStpCodonScope, trimmingTerminusOutScope)
             isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, trimmingTerminusInScope, findStpCodonScope);
 
             if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos&&((isForward&&isStpCodonF(targetSeq,tempExonVec[trimmedExon].dbEndPos))||(!isForward&&isStpCodonR(targetSeq,tempExonVec[trimmedExon].dbEndPos)))){
