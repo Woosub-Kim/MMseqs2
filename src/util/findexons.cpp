@@ -458,6 +458,11 @@ class ExonFinder{
             float matchIdentity = exonPath[exon].seqId / matchRatio(exonPath[exon].backtrace);
             bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, trimmingTerminusInScope, trimmingTerminusOutScope);
             bool isStartCodonFound = false;
+            // temp
+            int findStartCodonScope = (int)dbLength(exonPath[exon])*0.08+3;
+            findStartCodonScope -= findStartCodonScope%3;
+            firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, trimmingTerminusInScope, findStartCodonScope);
+
             if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos && ((isForward&&isMetCodonF(targetSeq,exonPath[exon].dbStartPos))||(!isForward&&isMetCodonR(targetSeq,exonPath[exon].dbStartPos)))){
                 tempExonVec.emplace_back(exonPath[exon]);
                 isStartCodonFound = true;
@@ -552,54 +557,57 @@ class ExonFinder{
             bool isStpCodonFound = false;
             float matchIdentity = tempExonVec[trimmedExon].seqId/matchRatio(tempExonVec[trimmedExon].backtrace);
             bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, trimmingTerminusInScope, trimmingTerminusOutScope);
-            int findStpCodonScope = tempExonVec[trimmedExon].queryOrfEndPos - tempExonVec[trimmedExon].qEndPos+3;
+            // temp
+            int findStpCodonScope = (int)dbLength(tempExonVec[trimmedExon])*0.08 +3;
             findStpCodonScope -= findStpCodonScope%3;
+            isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, trimmingTerminusInScope, findStpCodonScope);
+
             if(tempExonVec[trimmedExon].qEndPos == tempExonVec[trimmedExon].queryOrfEndPos&&((isForward&&isStpCodonF(targetSeq,tempExonVec[trimmedExon].dbEndPos))||(!isForward&&isStpCodonR(targetSeq,tempExonVec[trimmedExon].dbEndPos)))){
                 trimmedExonResult.emplace_back(tempExonVec[trimmedExon]);
                 isStpCodonFound = true;
             }
-            int score = 30;//queryLength(tempExonVec[trimmedExon]);
-            int dbPos = isForward ? (tempExonVec[trimmedExon].dbEndPos -1 - tempExonVec[trimmedExon].dbEndPos%3 ) : (tempExonVec[trimmedExon].dbEndPos +1 + tempExonVec[trimmedExon].dbEndPos%3);
-            while (score > 0){
-                if ((isForward&&isStpCodonF(targetSeq, dbPos)) || (!isForward&&isStpCodonR(targetSeq, dbPos))){
-                    isStpCodonFound = true;
-                    tempExonVec[trimmedExon].dbEndPos = dbPos;
-                    tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
-                    tempExonVec.emplace_back(tempExonVec[trimmedExon]);
-                    break;
-                }
-                score -= 1;
-                dbPos = isForward ? dbPos+3 : dbPos-3;
-            }
-
-
-//            if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
-//                if (isForward){
-//                    int dbPos = tempExonVec[trimmedExon].dbEndPos -1 -  tempExonVec[trimmedExon].qEndPos%3;
-//                    while(dbPos <= tempExonVec[trimmedExon].dbEndPos + findStpCodonScope){ // trimmingTerminusOutScope) {
-//                        if (isStpCodonF(targetSeq, dbPos)){
-//                            isStpCodonFound = true;
-//                            tempExonVec[trimmedExon].dbEndPos = dbPos;
-//                            tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
-//                            tempExonVec.emplace_back(tempExonVec[trimmedExon]);
-//                            break;
-//                        }
-//                        dbPos = dbPos + 3;
-//                    }
-//                } else {
-//                    int dbPos = tempExonVec[trimmedExon].dbEndPos +1 + tempExonVec[trimmedExon].qEndPos%3;
-//                    while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - findStpCodonScope){ // trimmingTerminusOutScope) {
-//                        if (isStpCodonR(targetSeq, dbPos)){
-//                            isStpCodonFound = true;
-//                            tempExonVec[trimmedExon].dbEndPos = dbPos;
-//                            tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
-//                            tempExonVec.emplace_back(tempExonVec[trimmedExon]);
-//                            break;
-//                        }
-//                        dbPos = dbPos - 3;
-//                    }
+//            int score = 30;//queryLength(tempExonVec[trimmedExon]);
+//            int dbPos = isForward ? (tempExonVec[trimmedExon].dbEndPos -1 - tempExonVec[trimmedExon].dbEndPos%3 ) : (tempExonVec[trimmedExon].dbEndPos +1 + tempExonVec[trimmedExon].dbEndPos%3);
+//            while (score > 0){
+//                if ((isForward&&isStpCodonF(targetSeq, dbPos)) || (!isForward&&isStpCodonR(targetSeq, dbPos))){
+//                    isStpCodonFound = true;
+//                    tempExonVec[trimmedExon].dbEndPos = dbPos;
+//                    tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
+//                    tempExonVec.emplace_back(tempExonVec[trimmedExon]);
+//                    break;
 //                }
+//                score -= 1;
+//                dbPos = isForward ? dbPos+3 : dbPos-3;
 //            }
+
+
+            if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
+                if (isForward){
+                    int dbPos = tempExonVec[trimmedExon].dbEndPos -1 -  tempExonVec[trimmedExon].qEndPos%3;
+                    while(dbPos <= tempExonVec[trimmedExon].dbEndPos + findStpCodonScope){ // trimmingTerminusOutScope) {
+                        if (isStpCodonF(targetSeq, dbPos)){
+                            isStpCodonFound = true;
+                            tempExonVec[trimmedExon].dbEndPos = dbPos;
+                            tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
+                            tempExonVec.emplace_back(tempExonVec[trimmedExon]);
+                            break;
+                        }
+                        dbPos = dbPos + 3;
+                    }
+                } else {
+                    int dbPos = tempExonVec[trimmedExon].dbEndPos +1 + tempExonVec[trimmedExon].qEndPos%3;
+                    while (dbPos >= tempExonVec[trimmedExon].dbEndPos  - findStpCodonScope){ // trimmingTerminusOutScope) {
+                        if (isStpCodonR(targetSeq, dbPos)){
+                            isStpCodonFound = true;
+                            tempExonVec[trimmedExon].dbEndPos = dbPos;
+                            tempExonVec[trimmedExon].qEndPos = tempExonVec[trimmedExon].queryOrfEndPos;
+                            tempExonVec.emplace_back(tempExonVec[trimmedExon]);
+                            break;
+                        }
+                        dbPos = dbPos - 3;
+                    }
+                }
+            }
             if (isStpCodonFound)
                 continue;
             if(isForward){
