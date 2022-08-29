@@ -458,13 +458,13 @@ private:
             float matchIdentity = exonPath[exon].seqId / matchRatio(exonPath[exon].backtrace);
             bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, trimmingTerminusInScope, trimmingTerminusOutScope);
             bool isStartCodonFound = false;
+            if (exonPath[exon].queryOrfStartPos != 0){
+                continue;
+            }
             if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos && ((isForward&&isMetCodonF(targetSeq,exonPath[exon].dbStartPos))||(!isForward&&isMetCodonR(targetSeq,exonPath[exon].dbStartPos)))){
                 tempExonVec.emplace_back(exonPath[exon]);
                 isStartCodonFound = true;
             }
-            // TEMP
-//            trimmingTerminusOutScope = trimmingTerminusOutScope/exonPath[exon].seqId;
-//            trimmingTerminusOutScope -= trimmingTerminusOutScope%3;
             if(isFirst && exonPath[exon].qStartPos != exonPath[exon].queryOrfStartPos){
                 if (isForward){
                     int dbPos = exonPath[exon].dbStartPos + trimmingTerminusInScope - exonPath[exon].qStartPos%3;
