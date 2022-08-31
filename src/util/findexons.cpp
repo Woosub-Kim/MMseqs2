@@ -465,7 +465,7 @@ private:
             int resLen = exonPath[exon].qStartPos-exonPath[exon].queryOrfStartPos;
             trimmingTerminusOutScope = exonPath[exon].seqId*90 + (exonPath[exon].qStartPos-exonPath[exon].queryOrfStartPos)*0.6+100;
 //            bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, trimmingTerminusInScope, trimmingTerminusOutScope) && queryLength(exonPath[exon])*exonPath[exon].seqId < trimmingTerminusOutScope;
-            isFirst = resLen <= 120;
+            isFirst = resLen <= 150;
 
             if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos && ((isForward&&isMetCodonF(targetSeq,exonPath[exon].dbStartPos))||(!isForward&&isMetCodonR(targetSeq,exonPath[exon].dbStartPos)))){
                 tempExonVec.emplace_back(exonPath[exon]);
@@ -568,7 +568,7 @@ private:
             // TEMP
             int resLen = tempExonVec[trimmedExon].queryOrfEndPos-tempExonVec[trimmedExon].qEndPos;
             trimmingTerminusOutScope =  tempExonVec[trimmedExon].seqId*90 + resLen*0.6  + 100;
-            isLast = resLen <= 110;
+            isLast = resLen <= 50;
 //            bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, trimmingTerminusInScope, trimmingTerminusOutScope) && queryLength(tempExonVec[trimmedExon])*tempExonVec[trimmedExon].seqId < trimmingTerminusOutScope;
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
