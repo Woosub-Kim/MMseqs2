@@ -465,7 +465,7 @@ private:
             int resLen = exonPath[exon].qStartPos-exonPath[exon].queryOrfStartPos;
             trimmingTerminusOutScope = exonPath[exon].seqId*90 + (exonPath[exon].qStartPos-exonPath[exon].queryOrfStartPos)*0.6+100;
 //            bool isFirst = firstExon(exonPath[exon].qStartPos, exonPath[exon].queryOrfStartPos, trimmingTerminusInScope, trimmingTerminusOutScope) && queryLength(exonPath[exon])*exonPath[exon].seqId < trimmingTerminusOutScope;
-            isFirst = resLen <= 150;
+            isFirst = resLen <= 130;
 
             if(exonPath[exon].qStartPos == exonPath[exon].queryOrfStartPos && ((isForward&&isMetCodonF(targetSeq,exonPath[exon].dbStartPos))||(!isForward&&isMetCodonR(targetSeq,exonPath[exon].dbStartPos)))){
                 tempExonVec.emplace_back(exonPath[exon]);
