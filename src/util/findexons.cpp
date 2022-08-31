@@ -568,7 +568,7 @@ private:
             // TEMP
             int resLen = tempExonVec[trimmedExon].queryOrfEndPos-tempExonVec[trimmedExon].qEndPos;
             trimmingTerminusOutScope =  tempExonVec[trimmedExon].seqId*90 + resLen*0.6  + 100;
-            isLast = resLen <= 60;
+            isLast = resLen <= 30;
 //            bool isLast = lastExon(tempExonVec[trimmedExon].qEndPos, tempExonVec[trimmedExon].queryOrfEndPos, trimmingTerminusInScope, trimmingTerminusOutScope) && queryLength(tempExonVec[trimmedExon])*tempExonVec[trimmedExon].seqId < trimmingTerminusOutScope;
             if(isLast && tempExonVec[trimmedExon].qEndPos != tempExonVec[trimmedExon].queryOrfEndPos){
                 if (isForward){
