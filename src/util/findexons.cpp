@@ -192,24 +192,24 @@ private:
 
     // to find Donnor Sites and Acceptor sites
     bool isAcceptorSiteF(char * targetSeq, int index){
-        char nt1 = std::toupper(targetSeq[index]);
-        char nt2 = std::toupper(targetSeq[index+1]);
+        char nt1 = std::toupper(targetSeq[index+1]);
+        char nt2 = std::toupper(targetSeq[index+2]);
         return nt1=='A'&&nt2=='G';
     }
     bool isDonorSitF(char * targetSeq, int index){
-        char nt1 = std::toupper(targetSeq[index]);
-        char nt2 = std::toupper(targetSeq[index+1]);
+        char nt1 = std::toupper(targetSeq[index+1]);
+        char nt2 = std::toupper(targetSeq[index+2]);
         //temp
         return  (nt1=='G'&&nt2=='T') ;//|| (nt1=='G'&&nt2=='C');
     }
     bool isAcceptorSiteR(char * targetSeq, int index){
-        char nt1 = std::toupper(targetSeq[index]);
-        char nt2 = std::toupper(targetSeq[index+1]);
+        char nt1 = std::toupper(targetSeq[index-2]);
+        char nt2 = std::toupper(targetSeq[index-1]);
         return  nt1=='C' && nt2=='T';
     }
     bool isDonorSiteR(char * targetSeq, int index){
-        char nt1 = std::toupper(targetSeq[index]);
-        char nt2 = std::toupper(targetSeq[index+1]);
+        char nt1 = std::toupper(targetSeq[index-2]);
+        char nt2 = std::toupper(targetSeq[index-1]);
         // temp
         return (nt1=='A' && nt2=='C');// || (nt1=='G' && nt2=='C');
     }
