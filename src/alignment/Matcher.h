@@ -167,22 +167,24 @@ public:
     }
 
     static bool compareOrfStartOrfEnd(const result_t &first, const result_t &second) {
-        if (second.queryOrfStartPos < first.queryOrfStartPos)
+        if (second.queryOrfStartPos < first.queryOrfStartPos) {
             return false;
-        if (first.queryOrfStartPos < second.queryOrfStartPos)
+        }
+        if (first.queryOrfStartPos < second.queryOrfStartPos) {
             return true;
-        if (second.queryOrfEndPos  < first.queryOrfEndPos )
-            return false;
-        if (first.queryOrfEndPos  < second.queryOrfEndPos )
-            return true;
-        if (second.dbOrfStartPos < first.dbOrfStartPos)
-            return false;
-        if (first.dbOrfStartPos < second.dbOrfStartPos)
-            return true;
-        if (second.dbOrfEndPos  < first.dbOrfEndPos )
-            return false;
-        if (first.dbOrfEndPos  < second.dbOrfEndPos )
-            return true;
+        }
+        if (second.queryOrfEndPos  < first.queryOrfEndPos ){return false;}
+
+        if (first.queryOrfEndPos  < second.queryOrfEndPos){return true;}
+
+        if (second.dbOrfStartPos < first.dbOrfStartPos){return false;}
+
+        if (first.dbOrfStartPos < second.dbOrfStartPos){return true;}
+
+        if (second.dbOrfEndPos  < first.dbOrfEndPos){return false;}
+
+        if (first.dbOrfEndPos  < second.dbOrfEndPos){return true;}
+
         return false;
     }
 
@@ -220,6 +222,27 @@ public:
         }
         return firstDbStart < secondDbStart;
     }
+
+    static bool compareHitsByPosWithStrand(const result_t &first, const result_t &second) {
+        bool firstStrand = first.dbEndPos > first.dbStartPos;
+        bool secondStrand = second.dbEndPos > second.dbStartPos;
+        if (firstStrand != secondStrand){
+            return true;
+        }
+        if (first.dbStartPos!=second.dbStartPos){
+            return firstStrand ?  first.dbStartPos < second.dbStartPos : first.dbStartPos > second.dbStartPos;
+        }
+        if (first.dbEndPos!=second.dbEndPos){
+            return firstStrand ?  first.dbEndPos < second.dbEndPos : first.dbEndPos > second.dbEndPos;
+        }
+        if (first.dbStartPos!=second.qStartPos){
+            return firstStrand ?  first.qStartPos < second.qStartPos : first.qStartPos > second.qStartPos;
+        }
+        if (first.qEndPos!=second.qEndPos){
+            return firstStrand ?  first.qEndPos < second.qEndPos : first.qEndPos > second.qEndPos;
+        }
+
+    }
     //to sort data
     static bool compareByDbkeyAndStrand(const result_t &first, const result_t &second) {
         if (first.dbKey < second.dbKey)
@@ -255,30 +278,31 @@ public:
             return false;
         return false;
     }
-//    static bool compareByDbposQpos(const result_t &first, const result_t &second){
-//        bool strand = first.dbEndPos > first.dbStartPos;
-//        //j_start
-//        if (first.dbStartPos < second.dbStartPos)
-//            return strand;
-//        if (first.dbStartPos > second.dbStartPos)
-//            return !strand;
-//        //j_end
-//        if (first.dbEndPos < second.dbEndPos)
-//            return strand;
-//        if (first.dbEndPos > second.dbEndPos)
-//            return !strand;
-//        //i_start
-//        if (first.qStartPos < second.qStartPos)
-//            return true;
-//        if (first.qStartPos > second.qStartPos)
-//            return false;
-//        //i_end
-//        if (first.qEndPos < second.qEndPos)
-//            return true;
-//        if (first.qEndPos > second.qEndPos)
-//            return false;
-//        return false;
-//    }
+
+    static bool compareByDbposQpos(const result_t &first, const result_t &second){
+        bool strand = first.dbEndPos > first.dbStartPos;
+        //j_start
+        if (first.dbStartPos < second.dbStartPos)
+            return strand;
+        if (first.dbStartPos > second.dbStartPos)
+            return !strand;
+        //j_end
+        if (first.dbEndPos < second.dbEndPos)
+            return strand;
+        if (first.dbEndPos > second.dbEndPos)
+            return !strand;
+        //i_start
+        if (first.qStartPos < second.qStartPos)
+            return true;
+        if (first.qStartPos > second.qStartPos)
+            return false;
+        //i_end
+        if (first.qEndPos < second.qEndPos)
+            return true;
+        if (first.qEndPos > second.qEndPos)
+            return false;
+        return false;
+    }
 
 
     // map new query into memory (create queryProfile, ...)
