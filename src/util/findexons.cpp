@@ -114,11 +114,11 @@ public:
                 }
                 optimalExonSolution.emplace_back(candidate.candidates[currId]);
                 std::sort(optimalExonSolution.begin(), optimalExonSolution.end(), Matcher::compareHitsByPosAndStrand);
+                trimExons(optimalExonSolution, thread_idx);
                 candidate.score = bestPathScore;
                 dpMatrixRow.clear();
             } //end of if conditional statement
         }//end of for loop statement
-        trimExons(optimalExonSolution, thread_idx);
     }// end of function
 
 private:
@@ -481,9 +481,9 @@ private:
                 if (dornorAcceptorSiteCands.size()>0){
                     std::sort(dornorAcceptorSiteCands.begin(), dornorAcceptorSiteCands.end());
                     optimalExonSolution[currExon-1].qEndPos = std::get<1>(dornorAcceptorSiteCands[0]);
-                    optimalExonSolution[currExon-1].dbEndPos = std::get<3>(dornorAcceptorSiteCands[0]);
+                    optimalExonSolution[currExon-1].dbEndPos = std::get<4>(dornorAcceptorSiteCands[0]);
                     optimalExonSolution[currExon].qStartPos = std::get<2>(dornorAcceptorSiteCands[0]);
-                    optimalExonSolution[currExon].dbStartPos = std::get<4>(dornorAcceptorSiteCands[0]);
+                    optimalExonSolution[currExon].dbStartPos = std::get<5>(dornorAcceptorSiteCands[0]);
                 } else {
                     // donor site
                     int dbPos = optimalExonSolution[currExon-1].dbEndPos;
@@ -568,8 +568,8 @@ private:
             return dornorAcceptorSiteCands;
         int dbPrevPos = prevExon.dbEndPos;
         int dbCurrPos = currExon.dbStartPos;
-        int qPrevPos = prevExon.qStartPos;
-        int qCurrPos = currExon.qEndPos;
+        int qPrevPos = prevExon.qEndPos;
+        int qCurrPos = currExon.qStartPos;
         // donor
         int loopStartPos = resLen<0 ? -defScope+resLen : -defScope;
         int loopEndPos = resLen<0 ? defScope+1 : defScope+1+resLen;
@@ -584,7 +584,7 @@ private:
         loopStartPos = resLen>0 ? -defScope-resLen: -defScope;
         loopEndPos = strand? defScope+1 : defScope+1-resLen;
         for(int pos = loopStartPos; pos < loopEndPos; pos++) {
-            int dbTempPos = strand? dbCurrPos+pos: dbPrevPos-pos;
+            int dbTempPos = strand? dbCurrPos+pos: dbCurrPos-pos;
             int qTempPos = qCurrPos + pos;
             bool isAcceptorSite = strand ? isAcceptorSiteF(targetSeq, dbTempPos) : isAcceptorSiteR(targetSeq, dbTempPos);
             if (isAcceptorSite)
