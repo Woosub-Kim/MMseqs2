@@ -118,8 +118,7 @@ public:
                 dpMatrixRow.clear();
             } //end of if conditional statement
         }//end of for loop statement
-        optimalExonSolution = trimExons(optimalExonSolution, thread_idx);
-
+        trimExons(optimalExonSolution, thread_idx);
     }// end of function
 
 private:
@@ -215,6 +214,7 @@ private:
         return (nt1=='A' && nt2=='C');// || (nt1=='G' && nt2=='C');
     }
     bool isStpCodonF(char * targetSeq, int index){
+//        int temp = std::strlen(targetSeq);
         char nt1 = std::toupper(targetSeq[index+1]);
         char nt2 = std::toupper(targetSeq[index+2]);
         char nt3 = std::toupper(targetSeq[index+3]);
@@ -430,8 +430,10 @@ private:
     // trimming alignments
     void trimExons(std::vector<Matcher::result_t> & optimalExonSolution, unsigned int thread_idx){
         char * targetSeq = getTargetSequence(optimalExonSolution[0].dbKey, thread_idx);
+        bool strand = optimalExonSolution[0].dbEndPos > optimalExonSolution[0].dbStartPos;
+        if (std::strlen(targetSeq)==0)
+            return;
         for (int currExon=0; currExon<optimalExonSolution.size(); currExon++){
-            bool strand = optimalExonSolution[currExon].dbEndPos > optimalExonSolution[currExon].dbStartPos;
 //             First Exon
             if (currExon==0){
                 // start codon
@@ -520,16 +522,15 @@ private:
         } // for End
         // Last Exon
         // stop codon
-        bool strand = optimalExonSolution[-1].dbEndPos > optimalExonSolution[-1].dbStartPos;
-        int resLen = optimalExonSolution[-1].queryOrfEndPos - optimalExonSolution[-1].qEndPos;
+        int resLen = optimalExonSolution[optimalExonSolution.size()-1].queryOrfEndPos - optimalExonSolution[optimalExonSolution.size()-1].qEndPos;
         int scope = resLen + bonusScope;
-        int dbPos = strand ? optimalExonSolution[-1].dbEndPos-optimalExonSolution[-1].qEndPos%3-1 : optimalExonSolution[-1].dbEndPos+optimalExonSolution[-1].qEndPos%3+1;
+        int dbPos = strand ? optimalExonSolution[optimalExonSolution.size()-1].dbEndPos-optimalExonSolution[optimalExonSolution.size()-1].qEndPos%3-1 : optimalExonSolution[optimalExonSolution.size()-1].dbEndPos+optimalExonSolution[optimalExonSolution.size()-1].qEndPos%3+1;
         bool doFindStpCodon = false;
         while (scope>0){
             bool isStpCodon = strand ? isStpCodonF(targetSeq, dbPos) : isStpCodonR(targetSeq, dbPos);
             if (isStpCodon) {
-                optimalExonSolution[-1].qEndPos = optimalExonSolution[-1].queryOrfEndPos;
-                optimalExonSolution[-1].dbEndPos = dbPos; // strand ? dbPos+3 : dbPos-3;
+                optimalExonSolution[optimalExonSolution.size()-1].qEndPos = optimalExonSolution[optimalExonSolution.size()-1].queryOrfEndPos;
+                optimalExonSolution[optimalExonSolution.size()-1].dbEndPos = dbPos; // strand ? dbPos+3 : dbPos-3;
                 doFindStpCodon = true;
                 break;
             }
@@ -538,8 +539,8 @@ private:
         }
         // DonorSite
         if (!doFindStpCodon){
-            int dbPos = optimalExonSolution[-1].dbEndPos;
-            int qPos = optimalExonSolution[-1].qEndPos;
+            int dbPos = optimalExonSolution[optimalExonSolution.size()-1].dbEndPos;
+            int qPos = optimalExonSolution[optimalExonSolution.size()-1].qEndPos;
             std::vector<std::tuple<int, int, int>> donorSiteCands;
             for (int pos = -edgeScope; pos<edgeScope; pos++){
                 int dbTempPos = strand? dbPos+pos : dbPos-pos;
@@ -551,11 +552,11 @@ private:
             }
             if (donorSiteCands.size()>0) {
                 std::sort(donorSiteCands.begin(), donorSiteCands.end());
-                optimalExonSolution[-1].dbEndPos = std::get<1>(donorSiteCands[0]);
-                optimalExonSolution[-1].qEndPos = std::get<2>(donorSiteCands[0]);
+                optimalExonSolution[optimalExonSolution.size()-1].dbEndPos = std::get<1>(donorSiteCands[0]);
+                optimalExonSolution[optimalExonSolution.size()-1].qEndPos = std::get<2>(donorSiteCands[0]);
+                optimalExonSolution[optimalExonSolution.size()-1].qEndPos = std::get<2>(donorSiteCands[0]);
             }
         }
-        return optimalExonSolution
     } // method End
     std::vector<std::tuple<int, int, int, int, int, int>> doItAtOnce(Matcher::result_t prevExon, Matcher::result_t currExon, char * targetSeq){
         std::vector<std::tuple<int, int, int, int, int, int>> dornorAcceptorSiteCands;
@@ -570,7 +571,9 @@ private:
         int qPrevPos = prevExon.qStartPos;
         int qCurrPos = currExon.qEndPos;
         // donor
-        for (int pos = resLen<0 ? -defScope+resLen : -defScope; pos<resLen<0 ? defScope+1 : defScope+1+resLen; pos++) {
+        int loopStartPos = resLen<0 ? -defScope+resLen : -defScope;
+        int loopEndPos = resLen<0 ? defScope+1 : defScope+1+resLen;
+        for (int pos = loopStartPos; pos<loopEndPos; pos++) {
             int dbTempPos = strand? dbPrevPos+pos: dbPrevPos-pos;
             int qTempPos = qPrevPos + pos;
             bool isDonorSite = strand? isDonorSitF(targetSeq, dbTempPos) : isDonorSiteR(targetSeq, dbTempPos);
@@ -578,7 +581,9 @@ private:
                 donorSiteCands.emplace_back(std::pair<int, int>(dbTempPos, qTempPos));
         }
         // acceptor
-        for(int pos = resLen>0 ? -defScope-resLen: -defScope; pos < strand? defScope+1 : defScope+1-resLen; pos++) {
+        loopStartPos = resLen>0 ? -defScope-resLen: -defScope;
+        loopEndPos = strand? defScope+1 : defScope+1-resLen;
+        for(int pos = loopStartPos; pos < loopEndPos; pos++) {
             int dbTempPos = strand? dbCurrPos+pos: dbPrevPos-pos;
             int qTempPos = qCurrPos + pos;
             bool isAcceptorSite = strand ? isAcceptorSiteF(targetSeq, dbTempPos) : isAcceptorSiteR(targetSeq, dbTempPos);
@@ -605,7 +610,7 @@ private:
                 dornorAcceptorSiteCands.emplace_back(std::tuple<int, int, int, int, int, int>(-score, dist, qDonorSiteCandPos, qAcceptorSiteCandPos, dbDonorSiteCandPos, dbAcceptorSiteCandPos));
             }
         }
-
+        return dornorAcceptorSiteCands;
     }
 };//end of class
 
