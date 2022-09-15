@@ -428,7 +428,7 @@ private:
 
     // trimming alignments
     void trimExons(std::vector<Matcher::result_t> & optimalExonSolution, unsigned int thread_idx){
-        char * targetSeq = getTargetSequence(exonPath[0].dbKey, thread_idx);
+        char * targetSeq = getTargetSequence(optimalExonSolution[0].dbKey, thread_idx);
         for (int currExon=0; currExon<optimalExonSolution.size(); currExon++){
             bool strand = optimalExonSolution[currExon].dbEndPos > optimalExonSolution[currExon].dbStartPos;
 //             First Exon
