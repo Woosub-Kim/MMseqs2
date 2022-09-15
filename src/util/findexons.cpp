@@ -119,6 +119,7 @@ public:
             } //end of if conditional statement
         }//end of for loop statement
         optimalExonSolution = trimExons(optimalExonSolution, thread_idx);
+
     }// end of function
 
 private:
@@ -554,6 +555,7 @@ private:
                 optimalExonSolution[-1].qEndPos = std::get<2>(donorSiteCands[0]);
             }
         }
+        return optimalExonSolution
     } // method End
     std::vector<std::tuple<int, int, int, int, int, int>> doItAtOnce(Matcher::result_t prevExon, Matcher::result_t currExon, char * targetSeq){
         std::vector<std::tuple<int, int, int, int, int, int>> dornorAcceptorSiteCands;
@@ -603,7 +605,7 @@ private:
                 dornorAcceptorSiteCands.emplace_back(std::tuple<int, int, int, int, int, int>(-score, dist, qDonorSiteCandPos, qAcceptorSiteCandPos, dbDonorSiteCandPos, dbAcceptorSiteCandPos));
             }
         }
-        return dornorAcceptorSiteCands;
+
     }
 };//end of class
 
