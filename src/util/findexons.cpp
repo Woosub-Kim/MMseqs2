@@ -529,8 +529,8 @@ private:
         while (scope>0){
             bool isStpCodon = strand ? isStpCodonF(targetSeq, dbPos) : isStpCodonR(targetSeq, dbPos);
             if (isStpCodon) {
-                optimalExonSolution[optimalExonSolution.size()-1].qEndPos = optimalExonSolution[optimalExonSolution.size()-1].queryOrfEndPos;
-                optimalExonSolution[optimalExonSolution.size()-1].dbEndPos = dbPos; // strand ? dbPos+3 : dbPos-3;
+                optimalExonSolution[optimalExonSolution.size()-1].qEndPos = optimalExonSolution[optimalExonSolution.size()-1].queryOrfEndPos; //+3;
+                optimalExonSolution[optimalExonSolution.size()-1].dbEndPos =  strand ? dbPos+3 : dbPos-3; // dbPos;
                 doFindStpCodon = true;
                 break;
             }
@@ -552,7 +552,7 @@ private:
             }
             if (donorSiteCands.size()>0) {
                 std::sort(donorSiteCands.begin(), donorSiteCands.end());
-                optimalExonSolution[optimalExonSolution.size()-1].dbEndPos = strand ?  std::get<1>(donorSiteCands[0])+3 : std::get<1>(donorSiteCands[0])-3;
+                optimalExonSolution[optimalExonSolution.size()-1].dbEndPos = std::get<1>(donorSiteCands[0]);
                 optimalExonSolution[optimalExonSolution.size()-1].qEndPos = std::get<2>(donorSiteCands[0]);
             }
         }
