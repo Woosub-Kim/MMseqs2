@@ -527,8 +527,8 @@ private:
         while (scope>0){
             bool isStpCodon = strand ? isStpCodonF(targetSeq, dbPos) : isStpCodonR(targetSeq, dbPos);
             if (isStpCodon) {
-                optimalExonSolution[-1].qEndPos = optimalExonSolution[-1].queryOrfEndPos; // + 3; for stp codon
-                optimalExonSolution[-1].dbEndPos = dbPos;
+                optimalExonSolution[-1].qEndPos = optimalExonSolution[-1].queryOrfEndPos;
+                optimalExonSolution[-1].dbEndPos = strand ? dbPos+3 : dbPos-3;
                 doFindStpCodon = true;
                 break;
             }
