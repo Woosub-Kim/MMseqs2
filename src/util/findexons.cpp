@@ -528,7 +528,7 @@ private:
             bool isStpCodon = strand ? isStpCodonF(targetSeq, dbPos) : isStpCodonR(targetSeq, dbPos);
             if (isStpCodon) {
                 optimalExonSolution[-1].qEndPos = optimalExonSolution[-1].queryOrfEndPos;
-                optimalExonSolution[-1].dbEndPos = strand ? dbPos+3 : dbPos-3;
+                optimalExonSolution[-1].dbEndPos = dbPos; // strand ? dbPos+3 : dbPos-3;
                 doFindStpCodon = true;
                 break;
             }
