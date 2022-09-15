@@ -738,7 +738,7 @@ std::vector<Command> baseCommands = {
 //                "# Assuming tar archive containing three aligned FASTA files:\n"
 //                "#  * folder/msa1.fa.gz  * folder/msa2.fa  * folder/msa3.fa\n"
 //                "# Create a msaDB with three DB entries each containing a separate MSA\n"
-//                "mmseqs tar2db archive.tar.gz msaDB --output-dbtype 11\n",
+//                "mmseqs tar2db archive.tar.gz msaDB --output-dbtype 11\n",PARAM_KMER_PER_SEQ
 //                "Milot Mirdita <milot@mirdita.de>",
 //                "<i:tar[.gz]> ... <i:tar[.gz]> <o:resultDB>",
 //                CITATION_MMSEQS2, {{".tar[.gz]", DbType::ACCESS_MODE_INPUT, DbType::NEED_DATA | DbType::VARIADIC, &DbValidator::flatfile },
