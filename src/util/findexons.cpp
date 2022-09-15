@@ -583,7 +583,7 @@ private:
         }
         // acceptor
         loopStartPos = resLen>0 ? -defScope-resLen: -defScope;
-        loopEndPos = strand? defScope+1 : defScope+1-resLen;
+        loopEndPos = resLen>0 ? defScope+1 : defScope+1-resLen;
         for(int pos = loopStartPos; pos < loopEndPos; pos++) {
             int dbTempPos = strand? dbCurrPos+pos: dbCurrPos-pos;
             int qTempPos = qCurrPos + pos;
@@ -654,7 +654,7 @@ int findexons(int argc, const char **argv, const Command &command) {
         for (size_t i = 0; i < alnDbr.getSize(); i++) {
             progress.updateProgress();
             const unsigned int queryKey = alnDbr.getDbKey(i);
-            if (queryKey==754)
+            if (queryKey==1030)
                 std::cout<<""<<std::endl;
             ExonFinder exonFinder(&tDbr, &qDbr, queryKey);
             char *data = alnDbr.getData(i, thread_idx);
