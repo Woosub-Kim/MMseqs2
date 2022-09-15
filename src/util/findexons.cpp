@@ -116,12 +116,143 @@ public:
 //                if (optimalExonSolution.size()==8 && optimalExonSolution[0].dbKey==4993)
 //                    std::cout<<""<<std::endl;
                 std::sort(optimalExonSolution.begin(), optimalExonSolution.end(), Matcher::compareHitsByPosWithStrand); // Matcher::compareHitsByPosWithStrand
-                trimExons(optimalExonSolution, thread_idx);
+//                trimExons(optimalExonSolution, thread_idx);
                 candidate.score = bestPathScore;
                 dpMatrixRow.clear();
             } //end of if conditional statement
         }//end of for loop statement
     }// end of function
+    // trimming alignments
+    std::vector<Matcher::result_t> trimExons(std::vector<Matcher::result_t> exonCandidate, unsigned int thread_idx){
+        char * targetSeq = getTargetSequence(exonCandidate[0].dbKey, thread_idx);
+        bool strand = exonCandidate[0].dbEndPos > exonCandidate[0].dbStartPos;
+        if (std::strlen(targetSeq)==0)
+            return exonCandidate;
+        for (int currExon=0; currExon<exonCandidate.size(); currExon++){
+//             First Exon
+            if (currExon==0){
+                // start codon
+                int resLen = exonCandidate[currExon].qStartPos - exonCandidate[currExon].queryOrfStartPos;
+                int qPos = exonCandidate[currExon].qStartPos - exonCandidate[currExon].qStartPos%3;
+                int dbPos = strand? exonCandidate[currExon].dbStartPos - exonCandidate[currExon].qStartPos%3 : exonCandidate[currExon].dbStartPos + exonCandidate[currExon].qStartPos%3;
+                int scope = resLen + bonusScope;
+                std::vector<std::pair<int,int>> startCodonCands;
+                int pos = -defScope;
+                while (pos<scope){
+                    int dbCurrPos = strand? dbPos-pos : dbPos+pos;
+                    int qCurrPos = qPos - pos;
+                    bool isMetCodon = strand? isMetCodonF(targetSeq, dbCurrPos) : isMetCodonR(targetSeq, dbCurrPos);
+                    if (isMetCodon)
+                        startCodonCands.emplace_back(std::pair<int,int>(abs(qCurrPos), dbCurrPos));
+                    pos += 3;
+                }
+                if (startCodonCands.size()>0){
+                    std::sort(startCodonCands.begin(), startCodonCands.end());
+                    exonCandidate[currExon].dbStartPos = startCodonCands[0].second;
+                    exonCandidate[currExon].qStartPos = exonCandidate[currExon].queryOrfStartPos;
+                    startCodonCands.clear();
+                    // Acceptor site
+                } else {
+                    int dbPos = exonCandidate[currExon].dbStartPos;
+                    int qPos = exonCandidate[currExon].qStartPos;
+                    std::vector<std::tuple<int,int, int>> acceptorSiteCands;
+                    for (int pos = edgeScope; pos > -edgeScope; pos--){
+                        int dbCurrPos = strand? dbPos+pos: dbPos-pos;
+                        int qCurrPos = qPos+pos;
+                        bool isAcceptorSite = strand? isAcceptorSiteF(targetSeq, dbCurrPos) : isAcceptorSiteR(targetSeq, dbCurrPos);
+                        if (isAcceptorSite)
+                            acceptorSiteCands.emplace_back(std::tuple<int, int, int>(abs(pos), dbCurrPos, qCurrPos));
+                    }
+                    if (acceptorSiteCands.size()>0){
+                        std::sort(acceptorSiteCands.begin(), acceptorSiteCands.end());
+                        exonCandidate[currExon].dbStartPos = std::get<1>(acceptorSiteCands[0]);
+                        exonCandidate[currExon].qStartPos = std::get<2>(acceptorSiteCands[0]);
+                    }
+                }
+                // middle Exons
+            } else {
+                // find donor and acceptor sites at once
+                std::vector<std::tuple<int, int, int, int, int, int>> dornorAcceptorSiteCands = doItAtOnce(exonCandidate[currExon-1], exonCandidate[currExon], targetSeq);
+                if (dornorAcceptorSiteCands.size()>0){
+                    std::sort(dornorAcceptorSiteCands.begin(), dornorAcceptorSiteCands.end());
+                    exonCandidate[currExon-1].qEndPos = std::get<1>(dornorAcceptorSiteCands[0]);
+                    exonCandidate[currExon-1].dbEndPos = std::get<4>(dornorAcceptorSiteCands[0]);
+                    exonCandidate[currExon].qStartPos = std::get<2>(dornorAcceptorSiteCands[0]);
+                    exonCandidate[currExon].dbStartPos = std::get<5>(dornorAcceptorSiteCands[0]);
+                } else {
+                    // donor site
+                    int dbPos = exonCandidate[currExon-1].dbEndPos;
+                    int qPos = exonCandidate[currExon-1].qEndPos;
+                    std::vector<std::tuple<int, int, int>> donorSiteCands;
+                    for (int pos = -edgeScope; pos<edgeScope; pos++) {
+                        int dbTempPos = strand ? dbPos+pos : dbPos-pos;
+                        int qTempPos = qPos + pos;
+                        bool isDonorSite = strand ? isDonorSitF(targetSeq, dbTempPos) : isDonorSiteR(targetSeq, dbTempPos);
+                        if (isDonorSite)
+                            donorSiteCands.emplace_back(std::tuple<int, int, int>(abs(pos), dbTempPos, qTempPos));
+                    }
+                    if (donorSiteCands.size()>0){
+                        std::sort(donorSiteCands.begin(), donorSiteCands.end());
+                        exonCandidate[currExon-1].dbEndPos = std::get<1>(donorSiteCands[0]);
+                        exonCandidate[currExon-1].qEndPos = std::get<2>(donorSiteCands[0]);
+                    }
+                    // acceptor site
+                    dbPos = exonCandidate[currExon].dbStartPos;
+                    qPos = exonCandidate[currExon].qStartPos;
+                    std::vector<std::tuple<int, int, int>> acceptorSiteCands;
+                    for (int pos=edgeScope; pos>-edgeScope; pos--) {
+                        int dbTempPos = strand ? dbPos+pos : dbPos-pos;
+                        int qTempPos = qPos + pos;
+                        bool isAcceptorSite = strand ? isAcceptorSiteF(targetSeq, dbTempPos) : isAcceptorSiteR(targetSeq, dbTempPos);
+                        if (isAcceptorSite)
+                            acceptorSiteCands.emplace_back(abs(pos), dbTempPos, qTempPos);
+                    }
+                    if (acceptorSiteCands.size()>0){
+                        std::sort(acceptorSiteCands.begin(), acceptorSiteCands.end());
+                        exonCandidate[currExon].dbStartPos = std::get<1>(acceptorSiteCands[0]);
+                        exonCandidate[currExon].qStartPos = std::get<2>(acceptorSiteCands[0]);
+                    }
+                }
+            }
+        } // for End
+        // Last Exon
+        // stop codon
+        int resLen = exonCandidate[exonCandidate.size()-1].queryOrfEndPos - exonCandidate[exonCandidate.size()-1].qEndPos;
+        int scope = resLen + bonusScope;
+        int dbPos = strand ? exonCandidate[exonCandidate.size()-1].dbEndPos-exonCandidate[exonCandidate.size()-1].qEndPos%3-1 : exonCandidate[exonCandidate.size()-1].dbEndPos+exonCandidate[exonCandidate.size()-1].qEndPos%3+1;
+        bool doFindStpCodon = false;
+        while (scope>0){
+            bool isStpCodon = strand ? isStpCodonF(targetSeq, dbPos) : isStpCodonR(targetSeq, dbPos);
+            if (isStpCodon) {
+                exonCandidate[exonCandidate.size()-1].qEndPos = exonCandidate[exonCandidate.size()-1].queryOrfEndPos; //+3;
+                exonCandidate[exonCandidate.size()-1].dbEndPos =  strand ? dbPos+3 : dbPos-3; // dbPos;
+                doFindStpCodon = true;
+                break;
+            }
+            scope -= 3;
+            dbPos = strand ? dbPos+3 : dbPos-3;
+        }
+        // DonorSite
+        if (!doFindStpCodon){
+            int dbPos = exonCandidate[exonCandidate.size()-1].dbEndPos;
+            int qPos = exonCandidate[exonCandidate.size()-1].qEndPos;
+            std::vector<std::tuple<int, int, int>> donorSiteCands;
+            for (int pos = -edgeScope; pos<edgeScope; pos++){
+                int dbTempPos = strand? dbPos+pos : dbPos-pos;
+                int qTempPos = qPos+pos;
+                bool isDonorSite = strand ? isDonorSitF(targetSeq, dbTempPos) : isDonorSiteR(targetSeq, dbTempPos);
+                if (isDonorSite){
+                    donorSiteCands.emplace_back(std::tuple<int, int, int>(abs(pos), dbTempPos, qTempPos));
+                }
+            }
+            if (donorSiteCands.size()>0) {
+                std::sort(donorSiteCands.begin(), donorSiteCands.end());
+                exonCandidate[exonCandidate.size()-1].dbEndPos = std::get<1>(donorSiteCands[0]);
+                exonCandidate[exonCandidate.size()-1].qEndPos = std::get<2>(donorSiteCands[0]);
+            }
+        }
+        return exonCandidate;
+    } // method End
 
 private:
     // class variable
@@ -429,136 +560,6 @@ private:
         return (qEndPos-inScope < qOrfEndPos) && (qOrfEndPos < qEndPos + outScope);
     }
 
-    // trimming alignments
-    void trimExons(std::vector<Matcher::result_t> & optimalExonSolution, unsigned int thread_idx){
-        char * targetSeq = getTargetSequence(optimalExonSolution[0].dbKey, thread_idx);
-        bool strand = optimalExonSolution[0].dbEndPos > optimalExonSolution[0].dbStartPos;
-        if (std::strlen(targetSeq)==0)
-            return;
-        for (int currExon=0; currExon<optimalExonSolution.size(); currExon++){
-//             First Exon
-            if (currExon==0){
-                // start codon
-                int resLen = optimalExonSolution[currExon].qStartPos - optimalExonSolution[currExon].queryOrfStartPos;
-                int qPos = optimalExonSolution[currExon].qStartPos - optimalExonSolution[currExon].qStartPos%3;
-                int dbPos = strand? optimalExonSolution[currExon].dbStartPos - optimalExonSolution[currExon].qStartPos%3 : optimalExonSolution[currExon].dbStartPos + optimalExonSolution[currExon].qStartPos%3;
-                int scope = resLen + bonusScope;
-                std::vector<std::pair<int,int>> startCodonCands;
-                int pos = -defScope;
-                while (pos<scope){
-                    int dbCurrPos = strand? dbPos-pos : dbPos+pos;
-                    int qCurrPos = qPos - pos;
-                    bool isMetCodon = strand? isMetCodonF(targetSeq, dbCurrPos) : isMetCodonR(targetSeq, dbCurrPos);
-                    if (isMetCodon)
-                        startCodonCands.emplace_back(std::pair<int,int>(abs(qCurrPos), dbCurrPos));
-                    pos += 3;
-                }
-                if (startCodonCands.size()>0){
-                    std::sort(startCodonCands.begin(), startCodonCands.end());
-                    optimalExonSolution[currExon].dbStartPos = startCodonCands[0].second;
-                    optimalExonSolution[currExon].qStartPos = optimalExonSolution[currExon].queryOrfStartPos;
-                    startCodonCands.clear();
-                    // Acceptor site
-                } else {
-                    int dbPos = optimalExonSolution[currExon].dbStartPos;
-                    int qPos = optimalExonSolution[currExon].qStartPos;
-                    std::vector<std::tuple<int,int, int>> acceptorSiteCands;
-                    for (int pos = edgeScope; pos > -edgeScope; pos--){
-                        int dbCurrPos = strand? dbPos+pos: dbPos-pos;
-                        int qCurrPos = qPos+pos;
-                        bool isAcceptorSite = strand? isAcceptorSiteF(targetSeq, dbCurrPos) : isAcceptorSiteR(targetSeq, dbCurrPos);
-                        if (isAcceptorSite)
-                            acceptorSiteCands.emplace_back(std::tuple<int, int, int>(abs(pos), dbCurrPos, qCurrPos));
-                    }
-                    if (acceptorSiteCands.size()>0){
-                        std::sort(acceptorSiteCands.begin(), acceptorSiteCands.end());
-                        optimalExonSolution[currExon].dbStartPos = std::get<1>(acceptorSiteCands[0]);
-                        optimalExonSolution[currExon].qStartPos = std::get<2>(acceptorSiteCands[0]);
-                    }
-                }
-                // middle Exons
-            } else {
-                // find donor and acceptor sites at once
-                std::vector<std::tuple<int, int, int, int, int, int>> dornorAcceptorSiteCands = doItAtOnce(optimalExonSolution[currExon-1], optimalExonSolution[currExon], targetSeq);
-                if (dornorAcceptorSiteCands.size()>0){
-                    std::sort(dornorAcceptorSiteCands.begin(), dornorAcceptorSiteCands.end());
-                    optimalExonSolution[currExon-1].qEndPos = std::get<1>(dornorAcceptorSiteCands[0]);
-                    optimalExonSolution[currExon-1].dbEndPos = std::get<4>(dornorAcceptorSiteCands[0]);
-                    optimalExonSolution[currExon].qStartPos = std::get<2>(dornorAcceptorSiteCands[0]);
-                    optimalExonSolution[currExon].dbStartPos = std::get<5>(dornorAcceptorSiteCands[0]);
-                } else {
-                    // donor site
-                    int dbPos = optimalExonSolution[currExon-1].dbEndPos;
-                    int qPos = optimalExonSolution[currExon-1].qEndPos;
-                    std::vector<std::tuple<int, int, int>> donorSiteCands;
-                    for (int pos = -edgeScope; pos<edgeScope; pos++) {
-                        int dbTempPos = strand ? dbPos+pos : dbPos-pos;
-                        int qTempPos = qPos + pos;
-                        bool isDonorSite = strand ? isDonorSitF(targetSeq, dbTempPos) : isDonorSiteR(targetSeq, dbTempPos);
-                        if (isDonorSite)
-                            donorSiteCands.emplace_back(std::tuple<int, int, int>(abs(pos), dbTempPos, qTempPos));
-                    }
-                    if (donorSiteCands.size()>0){
-                        std::sort(donorSiteCands.begin(), donorSiteCands.end());
-                        optimalExonSolution[currExon-1].dbEndPos = std::get<1>(donorSiteCands[0]);
-                        optimalExonSolution[currExon-1].qEndPos = std::get<2>(donorSiteCands[0]);
-                    }
-                    // acceptor site
-                    dbPos = optimalExonSolution[currExon].dbStartPos;
-                    qPos = optimalExonSolution[currExon].qStartPos;
-                    std::vector<std::tuple<int, int, int>> acceptorSiteCands;
-                    for (int pos=edgeScope; pos>-edgeScope; pos--) {
-                        int dbTempPos = strand ? dbPos+pos : dbPos-pos;
-                        int qTempPos = qPos + pos;
-                        bool isAcceptorSite = strand ? isAcceptorSiteF(targetSeq, dbTempPos) : isAcceptorSiteR(targetSeq, dbTempPos);
-                        if (isAcceptorSite)
-                            acceptorSiteCands.emplace_back(abs(pos), dbTempPos, qTempPos);
-                    }
-                    if (acceptorSiteCands.size()>0){
-                        std::sort(acceptorSiteCands.begin(), acceptorSiteCands.end());
-                        optimalExonSolution[currExon].dbStartPos = std::get<1>(acceptorSiteCands[0]);
-                        optimalExonSolution[currExon].qStartPos = std::get<2>(acceptorSiteCands[0]);
-                    }
-                }
-            }
-        } // for End
-        // Last Exon
-        // stop codon
-        int resLen = optimalExonSolution[optimalExonSolution.size()-1].queryOrfEndPos - optimalExonSolution[optimalExonSolution.size()-1].qEndPos;
-        int scope = resLen + bonusScope;
-        int dbPos = strand ? optimalExonSolution[optimalExonSolution.size()-1].dbEndPos-optimalExonSolution[optimalExonSolution.size()-1].qEndPos%3-1 : optimalExonSolution[optimalExonSolution.size()-1].dbEndPos+optimalExonSolution[optimalExonSolution.size()-1].qEndPos%3+1;
-        bool doFindStpCodon = false;
-        while (scope>0){
-            bool isStpCodon = strand ? isStpCodonF(targetSeq, dbPos) : isStpCodonR(targetSeq, dbPos);
-            if (isStpCodon) {
-                optimalExonSolution[optimalExonSolution.size()-1].qEndPos = optimalExonSolution[optimalExonSolution.size()-1].queryOrfEndPos; //+3;
-                optimalExonSolution[optimalExonSolution.size()-1].dbEndPos =  strand ? dbPos+3 : dbPos-3; // dbPos;
-                doFindStpCodon = true;
-                break;
-            }
-            scope -= 3;
-            dbPos = strand ? dbPos+3 : dbPos-3;
-        }
-        // DonorSite
-        if (!doFindStpCodon){
-            int dbPos = optimalExonSolution[optimalExonSolution.size()-1].dbEndPos;
-            int qPos = optimalExonSolution[optimalExonSolution.size()-1].qEndPos;
-            std::vector<std::tuple<int, int, int>> donorSiteCands;
-            for (int pos = -edgeScope; pos<edgeScope; pos++){
-                int dbTempPos = strand? dbPos+pos : dbPos-pos;
-                int qTempPos = qPos+pos;
-                bool isDonorSite = strand ? isDonorSitF(targetSeq, dbTempPos) : isDonorSiteR(targetSeq, dbTempPos);
-                if (isDonorSite){
-                    donorSiteCands.emplace_back(std::tuple<int, int, int>(abs(pos), dbTempPos, qTempPos));
-                }
-            }
-            if (donorSiteCands.size()>0) {
-                std::sort(donorSiteCands.begin(), donorSiteCands.end());
-                optimalExonSolution[optimalExonSolution.size()-1].dbEndPos = std::get<1>(donorSiteCands[0]);
-                optimalExonSolution[optimalExonSolution.size()-1].qEndPos = std::get<2>(donorSiteCands[0]);
-            }
-        }
-    } // method End
     std::vector<std::tuple<int, int, int, int, int, int>> doItAtOnce(Matcher::result_t prevExon, Matcher::result_t currExon, char * targetSeq){
         std::vector<std::tuple<int, int, int, int, int, int>> dornorAcceptorSiteCands;
         std::vector<std::pair<int, int>> donorSiteCands;
@@ -654,7 +655,7 @@ int findexons(int argc, const char **argv, const Command &command) {
         for (size_t i = 0; i < alnDbr.getSize(); i++) {
             progress.updateProgress();
             const unsigned int queryKey = alnDbr.getDbKey(i);
-            if (queryKey==1030)
+            if (queryKey==836)
                 std::cout<<""<<std::endl;
             ExonFinder exonFinder(&tDbr, &qDbr, queryKey);
             char *data = alnDbr.getData(i, thread_idx);
@@ -726,6 +727,7 @@ int findexons(int argc, const char **argv, const Command &command) {
             // output
             if(optimalSolutionWithScore.size()>0) {
                 // last vector in optimalSolutionWithScore contains highest scoring solution
+                optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates = exonFinder.trimExons(optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates, thread_idx);
                 size_t optimestPathSize = optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates.size();
                 for(size_t optIdx = 0; optIdx < optimestPathSize; optIdx++){
                     size_t len = Matcher::resultToBuffer(buffer, optimalSolutionWithScore[optimalSolutionWithScore.size()-1].candidates[optIdx], true, false, true);
