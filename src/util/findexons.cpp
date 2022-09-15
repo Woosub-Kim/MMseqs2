@@ -192,8 +192,8 @@ private:
 
     // to find Donnor Sites and Acceptor sites
     bool isAcceptorSiteF(char * targetSeq, int index){
-        char nt1 = std::toupper(targetSeq[index+1]);
-        char nt2 = std::toupper(targetSeq[index+2]);
+        char nt1 = std::toupper(targetSeq[index-2]);
+        char nt2 = std::toupper(targetSeq[index-1]);
         return nt1=='A'&&nt2=='G';
     }
     bool isDonorSitF(char * targetSeq, int index){
@@ -203,8 +203,8 @@ private:
         return  (nt1=='G'&&nt2=='T') ;//|| (nt1=='G'&&nt2=='C');
     }
     bool isAcceptorSiteR(char * targetSeq, int index){
-        char nt1 = std::toupper(targetSeq[index-2]);
-        char nt2 = std::toupper(targetSeq[index-1]);
+        char nt1 = std::toupper(targetSeq[index+1]);
+        char nt2 = std::toupper(targetSeq[index+2]);
         return  nt1=='C' && nt2=='T';
     }
     bool isDonorSiteR(char * targetSeq, int index){
@@ -552,8 +552,7 @@ private:
             }
             if (donorSiteCands.size()>0) {
                 std::sort(donorSiteCands.begin(), donorSiteCands.end());
-                optimalExonSolution[optimalExonSolution.size()-1].dbEndPos = std::get<1>(donorSiteCands[0]);
-                optimalExonSolution[optimalExonSolution.size()-1].qEndPos = std::get<2>(donorSiteCands[0]);
+                optimalExonSolution[optimalExonSolution.size()-1].dbEndPos = strand ?  std::get<1>(donorSiteCands[0])+3 : std::get<1>(donorSiteCands[0])-3;
                 optimalExonSolution[optimalExonSolution.size()-1].qEndPos = std::get<2>(donorSiteCands[0]);
             }
         }
