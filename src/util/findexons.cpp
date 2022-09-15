@@ -113,7 +113,9 @@ public:
                     currId = dpMatrixRow[currId].prevPotentialId;
                 }
                 optimalExonSolution.emplace_back(candidate.candidates[currId]);
-                std::sort(optimalExonSolution.begin(), optimalExonSolution.end(), Matcher::compareHitsByPosAndStrand);
+//                if (optimalExonSolution.size()==8 && optimalExonSolution[0].dbKey==4993)
+//                    std::cout<<""<<std::endl;
+                std::sort(optimalExonSolution.begin(), optimalExonSolution.end(), Matcher::compareHitsByPosWithStrand); // Matcher::compareHitsByPosWithStrand
                 trimExons(optimalExonSolution, thread_idx);
                 candidate.score = bestPathScore;
                 dpMatrixRow.clear();
@@ -652,6 +654,8 @@ int findexons(int argc, const char **argv, const Command &command) {
         for (size_t i = 0; i < alnDbr.getSize(); i++) {
             progress.updateProgress();
             const unsigned int queryKey = alnDbr.getDbKey(i);
+            if (queryKey==754)
+                std::cout<<""<<std::endl;
             ExonFinder exonFinder(&tDbr, &qDbr, queryKey);
             char *data = alnDbr.getData(i, thread_idx);
             if(data[0]=='\0'){
