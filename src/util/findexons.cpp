@@ -118,7 +118,7 @@ public:
                 dpMatrixRow.clear();
             } //end of if conditional statement
         }//end of for loop statement
-        trimExons(optimalExonSolution, thread_idx);
+        optimalExonSolution = trimExons(optimalExonSolution, thread_idx);
     }// end of function
 
 private:
