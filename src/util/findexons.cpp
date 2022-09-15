@@ -688,10 +688,11 @@ int findexons(int argc, const char **argv, const Command &command) {
                             length = length + abs(optimalExonSolution[optExonIdx].qEndPos - optimalExonSolution[optExonIdx].qStartPos) + 1;
                         }
                         float scoreLengthRatio = (float)orfScore/length;
-                        if (scoreLengthRatio > falsePositiveFilteringRatio) {
-                            optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
-//                            maxScore = orfScore;
-                        }
+                        optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
+//                        if (scoreLengthRatio > falsePositiveFilteringRatio) {
+//                            optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
+////                            maxScore = orfScore;
+//                        }
                         maxScore = orfScore;
 
                     }
@@ -710,10 +711,11 @@ int findexons(int argc, const char **argv, const Command &command) {
                         length = length + abs(optimalExonSolution[optExonIdx].qEndPos - optimalExonSolution[optExonIdx].qStartPos) + 1;
                     }
                     float scoreLengthRatio = (float)orfScore/length;
-                    if (scoreLengthRatio > falsePositiveFilteringRatio) {
-                        optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
-//                        maxScore = orfScore;
-                    }
+                    optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
+//                    if (scoreLengthRatio > falsePositiveFilteringRatio) {
+//                        optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
+////                        maxScore = orfScore;
+//                    }
                     maxScore = orfScore;
 
                 }
