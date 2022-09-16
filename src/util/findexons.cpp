@@ -116,7 +116,6 @@ public:
 //                if (optimalExonSolution.size()==8 && optimalExonSolution[0].dbKey==4993)
 //                    std::cout<<""<<std::endl;
                 std::sort(optimalExonSolution.begin(), optimalExonSolution.end(), Matcher::compareHitsByPosWithStrand); // Matcher::compareHitsByPosWithStrand
-//                trimExons(optimalExonSolution, thread_idx);
                 candidate.score = bestPathScore;
                 dpMatrixRow.clear();
             } //end of if conditional statement
@@ -665,7 +664,8 @@ int findexons(int argc, const char **argv, const Command &command) {
             }
             inputAlignments.clear();
             Matcher::readAlignmentResults(inputAlignments, data, true);
-            std::sort(inputAlignments.begin(), inputAlignments.end(), Matcher::compareOrfStartOrfEnd);
+//            std::sort(inputAlignments.begin(), inputAlignments.end(), Matcher::compareOrfStartOrfEnd);
+            std::sort(inputAlignments.begin(), inputAlignments.end(),Matcher::compareByDbkeyAndStrand);
             int prevQueryOrfStartPos = inputAlignments[0].queryOrfStartPos;
             int prevQueryOrfEndPos = inputAlignments[0].queryOrfEndPos;
             resultWriter.writeStart(thread_idx);
@@ -679,50 +679,56 @@ int findexons(int argc, const char **argv, const Command &command) {
                 if(inputAlignments[resIdx].qStartPos>inputAlignments[resIdx].qEndPos){
                     inputAlignments[resIdx] = exonFinder.flipExons(inputAlignments[resIdx]);
                 } // end of if conditional statement to correct flipped exon
-
-                bool querySameOrf =  prevQueryOrfStartPos == inputAlignments[resIdx].queryOrfStartPos && prevQueryOrfEndPos == inputAlignments[resIdx].queryOrfEndPos;
-                if(querySameOrf){
-                    orfResults.emplace_back(inputAlignments[resIdx]);
-                }else{
-                    exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore, orfKeepingBonusRatio, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope);
-                    orfResults.clear();
-                    if(orfScore>maxScore){
-                        int length = 0;
-                        for (size_t optExonIdx = 0; optExonIdx < optimalExonSolution.size(); optExonIdx++ ) {
-                            length = length + abs(optimalExonSolution[optExonIdx].qEndPos - optimalExonSolution[optExonIdx].qStartPos) + 1;
-                        }
-                        float scoreLengthRatio = (float)orfScore/length;
-                        optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
-//                        if (scoreLengthRatio > falsePositiveFilteringRatio) {
-//                            optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
-////                            maxScore = orfScore;
+                orfResults.emplace_back(inputAlignments[resIdx]);
+//                bool querySameOrf =  prevQueryOrfStartPos == inputAlignments[resIdx].queryOrfStartPos && prevQueryOrfEndPos == inputAlignments[resIdx].queryOrfEndPos;
+//                if(querySameOrf){
+//                    orfResults.emplace_back(inputAlignments[resIdx]);
+//                }else{
+//                    exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore, orfKeepingBonusRatio, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope);
+//                    orfResults.clear();
+//                    if(orfScore>maxScore){
+//                        int length = 0;
+//                        for (size_t optExonIdx = 0; optExonIdx < optimalExonSolution.size(); optExonIdx++ ) {
+//                            length = length + abs(optimalExonSolution[optExonIdx].qEndPos - optimalExonSolution[optExonIdx].qStartPos) + 1;
 //                        }
-                        maxScore = orfScore;
-
-                    }
-                    orfResults.emplace_back(inputAlignments[resIdx]);
-                    prevQueryOrfStartPos = inputAlignments[resIdx].queryOrfStartPos;
-                    prevQueryOrfEndPos = inputAlignments[resIdx].queryOrfEndPos;
-                }
+//                        float scoreLengthRatio = (float)orfScore/length;
+//                        optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
+////                        if (scoreLengthRatio > falsePositiveFilteringRatio) {
+////                            optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
+//////                            maxScore = orfScore;
+////                        }
+//                        maxScore = orfScore;
+//
+//                    }
+//                    orfResults.emplace_back(inputAlignments[resIdx]);
+//                    prevQueryOrfStartPos = inputAlignments[resIdx].queryOrfStartPos;
+//                    prevQueryOrfEndPos = inputAlignments[resIdx].queryOrfEndPos;
+//                }
             }
-            //last orf info -> optimal
+
+//            //last orf info -> optimal
+//            if(orfResults.size() > 0){
+//                exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore, orfKeepingBonusRatio, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope);
+//                orfResults.clear();
+//                if(orfScore>maxScore){
+//                    int length = 0;
+//                    for (size_t optExonIdx = 0; optExonIdx < optimalExonSolution.size(); optExonIdx++ ) {
+//                        length = length + abs(optimalExonSolution[optExonIdx].qEndPos - optimalExonSolution[optExonIdx].qStartPos) + 1;
+//                    }
+//                    float scoreLengthRatio = (float)orfScore/length;
+//                    optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
+////                    if (scoreLengthRatio > falsePositiveFilteringRatio) {
+////                        optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
+//////                        maxScore = orfScore;
+////                    }
+//                    maxScore = orfScore;
+//
+//                }
+//            }
             if(orfResults.size() > 0){
                 exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore, orfKeepingBonusRatio, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope);
                 orfResults.clear();
-                if(orfScore>maxScore){
-                    int length = 0;
-                    for (size_t optExonIdx = 0; optExonIdx < optimalExonSolution.size(); optExonIdx++ ) {
-                        length = length + abs(optimalExonSolution[optExonIdx].qEndPos - optimalExonSolution[optExonIdx].qStartPos) + 1;
-                    }
-                    float scoreLengthRatio = (float)orfScore/length;
-                    optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
-//                    if (scoreLengthRatio > falsePositiveFilteringRatio) {
-//                        optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
-////                        maxScore = orfScore;
-//                    }
-                    maxScore = orfScore;
-
-                }
+                maxScore = orfScore>maxScore ? orfScore : maxScore
             }
             // output
             if(optimalSolutionWithScore.size()>0) {
