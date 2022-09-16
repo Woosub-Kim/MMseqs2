@@ -134,10 +134,9 @@ public:
                 int resLen = exonCandidate[currExon].qStartPos - exonCandidate[currExon].queryOrfStartPos;
                 int qPos = exonCandidate[currExon].qStartPos - exonCandidate[currExon].qStartPos%3;
                 int dbPos = strand? exonCandidate[currExon].dbStartPos - exonCandidate[currExon].qStartPos%3 : exonCandidate[currExon].dbStartPos + exonCandidate[currExon].qStartPos%3;
-//                int scope = resLen + bonusScope;
-                int scope = resLen*2;
+                int scope = resLen + bonusScope*2;
                 std::vector<std::pair<int,int>> startCodonCands;
-                int pos = -defScope;
+                int pos = -defScope - bonusScope;
                 while (pos<scope){
                     int dbCurrPos = strand? dbPos-pos : dbPos+pos;
                     int qCurrPos = qPos - pos;
@@ -655,7 +654,7 @@ int findexons(int argc, const char **argv, const Command &command) {
         for (size_t i = 0; i < alnDbr.getSize(); i++) {
             progress.updateProgress();
             const unsigned int queryKey = alnDbr.getDbKey(i);
-            if (queryKey==962)
+            if (queryKey==955)
                 std::cout<<""<<std::endl;
             ExonFinder exonFinder(&tDbr, &qDbr, queryKey);
             char *data = alnDbr.getData(i, thread_idx);
