@@ -73,7 +73,7 @@ public:
                 bool strand = candidate.candidates[currExon].dbEndPos>candidate.candidates[currExon].dbStartPos;
                 for (size_t prevExon = 0; prevExon < currExon; prevExon++) {
                     int tIntronLength = strand ? candidate.candidates[currExon].dbStartPos - candidate.candidates[prevExon].dbEndPos+1:candidate.candidates[prevExon].dbEndPos-candidate.candidates[currExon].dbStartPos+1 ;
-                    int qIntronLength = strand ? candidate.candidates[currExon].dbStartPos - candidate.candidates[prevExon].dbEndPos+1:candidate.candidates[prevExon].dbEndPos-candidate.candidates[currExon].dbStartPos+1 ;
+                    int qIntronLength = candidate.candidates[currExon].qStartPos - candidate.candidates[prevExon].qEndPos+1;
                     bool isNotTooLongIntron = (tIntronLength < INTRON_MAX);
                     bool isNotTooShortIntron = tIntronLength > INTRON_MIN;
                     bool isNotOverlapped = qIntronLength > -tempScope;
@@ -174,9 +174,9 @@ public:
                 std::vector<std::tuple<int, int, int, int, int, int>> dornorAcceptorSiteCands = doItAtOnce(exonCandidate[currExon-1], exonCandidate[currExon], targetSeq);
                 if (dornorAcceptorSiteCands.size()>0){
                     std::sort(dornorAcceptorSiteCands.begin(), dornorAcceptorSiteCands.end());
-                    exonCandidate[currExon-1].qEndPos = std::get<1>(dornorAcceptorSiteCands[0]);
+                    exonCandidate[currExon-1].qEndPos = std::get<2>(dornorAcceptorSiteCands[0]);
                     exonCandidate[currExon-1].dbEndPos = std::get<4>(dornorAcceptorSiteCands[0]);
-                    exonCandidate[currExon].qStartPos = std::get<2>(dornorAcceptorSiteCands[0]);
+                    exonCandidate[currExon].qStartPos = std::get<3>(dornorAcceptorSiteCands[0]);
                     exonCandidate[currExon].dbStartPos = std::get<5>(dornorAcceptorSiteCands[0]);
                 } else {
                     // donor site
@@ -654,7 +654,7 @@ int findexons(int argc, const char **argv, const Command &command) {
         for (size_t i = 0; i < alnDbr.getSize(); i++) {
             progress.updateProgress();
             const unsigned int queryKey = alnDbr.getDbKey(i);
-            if (queryKey==836)
+            if (queryKey==892)
                 std::cout<<""<<std::endl;
             ExonFinder exonFinder(&tDbr, &qDbr, queryKey);
             char *data = alnDbr.getData(i, thread_idx);
@@ -664,8 +664,7 @@ int findexons(int argc, const char **argv, const Command &command) {
             }
             inputAlignments.clear();
             Matcher::readAlignmentResults(inputAlignments, data, true);
-//            std::sort(inputAlignments.begin(), inputAlignments.end(), Matcher::compareOrfStartOrfEnd);
-            std::sort(inputAlignments.begin(), inputAlignments.end(),Matcher::compareByDbkeyAndStrand);
+            std::sort(inputAlignments.begin(), inputAlignments.end(), Matcher::compareOrfStartOrfEnd);
             int prevQueryOrfStartPos = inputAlignments[0].queryOrfStartPos;
             int prevQueryOrfEndPos = inputAlignments[0].queryOrfEndPos;
             resultWriter.writeStart(thread_idx);
@@ -679,58 +678,28 @@ int findexons(int argc, const char **argv, const Command &command) {
                 if(inputAlignments[resIdx].qStartPos>inputAlignments[resIdx].qEndPos){
                     inputAlignments[resIdx] = exonFinder.flipExons(inputAlignments[resIdx]);
                 } // end of if conditional statement to correct flipped exon
-                orfResults.emplace_back(inputAlignments[resIdx]);
-//                bool querySameOrf =  prevQueryOrfStartPos == inputAlignments[resIdx].queryOrfStartPos && prevQueryOrfEndPos == inputAlignments[resIdx].queryOrfEndPos;
-//                if(querySameOrf){
-//                    orfResults.emplace_back(inputAlignments[resIdx]);
-//                }else{
-//                    exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore, orfKeepingBonusRatio, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope);
-//                    orfResults.clear();
-//                    if(orfScore>maxScore){
-//                        int length = 0;
-//                        for (size_t optExonIdx = 0; optExonIdx < optimalExonSolution.size(); optExonIdx++ ) {
-//                            length = length + abs(optimalExonSolution[optExonIdx].qEndPos - optimalExonSolution[optExonIdx].qStartPos) + 1;
-//                        }
-//                        float scoreLengthRatio = (float)orfScore/length;
-//                        optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
-////                        if (scoreLengthRatio > falsePositiveFilteringRatio) {
-////                            optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
-//////                            maxScore = orfScore;
-////                        }
-//                        maxScore = orfScore;
-//
-//                    }
-//                    orfResults.emplace_back(inputAlignments[resIdx]);
-//                    prevQueryOrfStartPos = inputAlignments[resIdx].queryOrfStartPos;
-//                    prevQueryOrfEndPos = inputAlignments[resIdx].queryOrfEndPos;
-//                }
+                bool querySameOrf =  prevQueryOrfStartPos == inputAlignments[resIdx].queryOrfStartPos && prevQueryOrfEndPos == inputAlignments[resIdx].queryOrfEndPos;
+                if(querySameOrf){
+                    orfResults.emplace_back(inputAlignments[resIdx]);
+                }else{
+                    exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore, orfKeepingBonusRatio, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope);
+                    orfResults.clear();
+                    if(orfScore>maxScore){
+                        optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
+                        maxScore = orfScore;
+                    }
+                    orfResults.emplace_back(inputAlignments[resIdx]);
+                    prevQueryOrfStartPos = inputAlignments[resIdx].queryOrfStartPos;
+                    prevQueryOrfEndPos = inputAlignments[resIdx].queryOrfEndPos;
+                }
             }
-
-//            //last orf info -> optimal
-//            if(orfResults.size() > 0){
-//                exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore, orfKeepingBonusRatio, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope);
-//                orfResults.clear();
-//                if(orfScore>maxScore){
-//                    int length = 0;
-//                    for (size_t optExonIdx = 0; optExonIdx < optimalExonSolution.size(); optExonIdx++ ) {
-//                        length = length + abs(optimalExonSolution[optExonIdx].qEndPos - optimalExonSolution[optExonIdx].qStartPos) + 1;
-//                    }
-//                    float scoreLengthRatio = (float)orfScore/length;
-//                    optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
-////                    if (scoreLengthRatio > falsePositiveFilteringRatio) {
-////                        optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
-//////                        maxScore = orfScore;
-////                    }
-//                    maxScore = orfScore;
-//
-//                }
-//            }
+            //last orf info -> optimal
             if(orfResults.size() > 0){
                 exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore, orfKeepingBonusRatio, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope);
                 orfResults.clear();
-                if (orfScore>maxScore){ // filtering?
-                    maxScore = orfScore;
+                if(orfScore>maxScore){
                     optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
+                    maxScore = orfScore;
                 }
             }
             // output
