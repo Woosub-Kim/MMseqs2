@@ -728,7 +728,10 @@ int findexons(int argc, const char **argv, const Command &command) {
             if(orfResults.size() > 0){
                 exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore, orfKeepingBonusRatio, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope);
                 orfResults.clear();
-                maxScore = orfScore>maxScore ? orfScore : maxScore
+                if (orfScore>maxScore){ // filtering?
+                    maxScore = orfScore;
+                    optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
+                }
             }
             // output
             if(optimalSolutionWithScore.size()>0) {
