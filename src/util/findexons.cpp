@@ -109,7 +109,7 @@ public:
                     int qIntronLength = candidate.candidates[currExon].qStartPos - candidate.candidates[prevExon].qEndPos+1;
                     bool isNotTooLongIntron = (tIntronLength < MAX_INTRON_LENGTH);
                     bool isNotTooShortIntron = tIntronLength > MIN_INTRON_LENGTH;
-                    bool isNotOverlapped = qIntronLength > - MAX_ALIGNMENT_OVERLAP_LENGTH;
+                    bool isNotOverlapped = qIntronLength > - MAX_ALIGNMENTS_OVERLAP_LENGTH;
                     bool prevStrand = candidate.candidates[prevExon].dbEndPos>candidate.candidates[prevExon].dbStartPos;
                     bool isTheSameStrand = strand==prevStrand;
                     bool isTheSameOrf = candidate.candidates[currExon].queryOrfStartPos==candidate.candidates[prevExon].queryOrfStartPos && candidate.candidates[currExon].queryOrfEndPos==candidate.candidates[prevExon].queryOrfEndPos;
@@ -290,10 +290,10 @@ private:
     const int MAX_INTRON_LENGTH = 200000;
     const int MIN_INTRON_LENGTH = 30;
     const int CODON_LENGTH = 3;
-    const int BONUS_SCOPE = 90; //60;
+    const int BONUS_SCOPE = 60;
     const int MAX_RESIDUE_LENGTH = 30;
     const int START_END_CODON_FIND_SCOPE = 90;
-    const int MAX_ALIGNMENT_OVERLAP_LENGTH = 90;
+    const int MAX_ALIGNMENTS_OVERLAP_LENGTH = 90;
 
     IndexReader * tDbr;
     // Do I need?
