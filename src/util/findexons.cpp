@@ -50,12 +50,12 @@ public:
             std::vector<Matcher::result_t> & optimalExonSolution,
             std::vector<Matcher::result_t> & exonPath, //orfResults
             unsigned int thread_idx,
-            long & orfScore,
-            float orfKeepingBonusRatio,
-            unsigned int trimmingSpliceSiteInScope,
-            unsigned int trimmingSpliceSiteOutScope,
-            unsigned int trimmingTerminusOutScope,
-            unsigned int trimmingTerminusInScope
+            long & orfScore//,
+//            float orfKeepingBonusRatio,
+//            unsigned int trimmingSpliceSiteInScope,
+//            unsigned int trimmingSpliceSiteOutScope,
+//            unsigned int trimmingTerminusOutScope,
+//            unsigned int trimmingTerminusInScope
     ) {
         std::sort(exonPath.begin(), exonPath.end(), Matcher::compareByDbkeyAndStrand);
         std::vector<ExonCandidates> candidates = createPotentialExonCombinations(exonPath);
@@ -620,11 +620,11 @@ int findexons(int argc, const char **argv, const Command &command) {
     Parameters &par = Parameters::getInstance();
     par.parseParameters(argc, argv, command, true, 0, 0);
 
-    float orfKeepingBonusRatio = (float)par.orfBonusRatio/100;
-    unsigned int trimmingSpliceSiteInScope = par.trimSpliceInScope;
-    unsigned int trimmingSpliceSiteOutScope = par.trimSpliceOutScope;
-    unsigned int trimmingTerminusInScope = par.trimTermInScope;
-    unsigned int trimmingTerminusOutScope = par.trimTermOutScope;
+//    float orfKeepingBonusRatio = (float)par.orfBonusRatio/100;
+//    unsigned int trimmingSpliceSiteInScope = par.trimSpliceInScope;
+//    unsigned int trimmingSpliceSiteOutScope = par.trimSpliceOutScope;
+//    unsigned int trimmingTerminusInScope = par.trimTermInScope;
+//    unsigned int trimmingTerminusOutScope = par.trimTermOutScope;
     float falsePositiveFilteringRatio = (float)par.filteringRatio/100;
 
     const bool touch = (par.preloadMode != Parameters::PRELOAD_MODE_MMAP);
@@ -682,7 +682,7 @@ int findexons(int argc, const char **argv, const Command &command) {
                 if(querySameOrf){
                     orfResults.emplace_back(inputAlignments[resIdx]);
                 }else{
-                    exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore, orfKeepingBonusRatio, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope);
+                    exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore); //, orfKeepingBonusRatio, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope);
                     orfResults.clear();
                     if(orfScore>maxScore){
                         optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
@@ -695,7 +695,7 @@ int findexons(int argc, const char **argv, const Command &command) {
             }
             //last orf info -> optimal
             if(orfResults.size() > 0){
-                exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore, orfKeepingBonusRatio, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope);
+                exonFinder.findOptimalExons(optimalExonSolution, orfResults, thread_idx, orfScore);//, orfKeepingBonusRatio, trimmingSpliceSiteInScope, trimmingSpliceSiteOutScope, trimmingTerminusOutScope, trimmingTerminusInScope);
                 orfResults.clear();
                 if(orfScore>maxScore){
                     optimalSolutionWithScore.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
