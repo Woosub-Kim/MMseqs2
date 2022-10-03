@@ -241,7 +241,7 @@ public:
         if (first.qEndPos!=second.qEndPos){
             return firstStrand ?  first.qEndPos < second.qEndPos : first.qEndPos > second.qEndPos;
         }
-
+        return true;
     }
     //to sort data
     static bool compareByDbkeyAndStrand(const result_t &first, const result_t &second) {
@@ -303,7 +303,6 @@ public:
             return false;
         return false;
     }
-
 
     // map new query into memory (create queryProfile, ...)
     void initQuery(Sequence* query);

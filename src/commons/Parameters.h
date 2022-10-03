@@ -632,13 +632,8 @@ public:
     std::string tarExclude;
     
     // findexons
-    int orfBonusRatio;
-    int trimSpliceInScope;
-    int trimSpliceOutScope;
-    int trimTermOutScope;
-    int trimTermInScope;
     int filteringRatio;
-
+    int encludingStopCodon;
 
     // for modules that should handle -h themselves
     bool help;
@@ -959,13 +954,8 @@ public:
     PARAMETER(PARAM_TAR_EXCLUDE)
     
     // findexons
-    PARAMETER(PARAM_ORF_BONUS_RATIO)
-    PARAMETER(PARAM_TRIM_SPLICE_IN_SCOPE)
-    PARAMETER(PARAM_TRIM_SPLICE_OUT_SCOPE)
-    PARAMETER(PARAM_TRIM_TERMINUS_IN_SCOPE)
-    PARAMETER(PARAM_TRIM_TERMINUS_OUT_SCOPE)
     PARAMETER(PARAM_FILTERING_RATIO)
-
+    PARAMETER(PARAM_ENCLUDING_STOP_CODON)
 
     // for modules that should handle -h themselves
     PARAMETER(PARAM_HELP)
