@@ -174,7 +174,9 @@ public:
                     int qCurrPos = qPos - pos;
                     bool isMetCodon = strand? isMetCodonF(targetSeq, dbCurrPos) : isMetCodonR(targetSeq, dbCurrPos);
                     if (isMetCodon)
-                        startCodonCands.emplace_back(splicingSiteCandidate(abs(qCurrPos), dbCurrPos, 0));
+                        // TEMP
+//                        startCodonCands.emplace_back(splicingSiteCandidate(abs(qCurrPos), dbCurrPos, 0));
+                        startCodonCands.emplace_back(splicingSiteCandidate(abs(pos), dbCurrPos, 0));
                     pos += 3;
                 }
                 if (startCodonCands.size()>0){
@@ -620,7 +622,9 @@ private:
             int qTempPos = qPrevPos + pos;
             bool isDonorSite = strand? isDonorSitF(targetSeq, dbTempPos) : isDonorSiteR(targetSeq, dbTempPos);
             if (isDonorSite)
-                donorSiteCands.emplace_back(splicingSiteCandidate(0, dbTempPos, qTempPos));
+                // TEMP
+//                donorSiteCands.emplace_back(splicingSiteCandidate(0, dbTempPos, qTempPos));
+                donorSiteCands.emplace_back(splicingSiteCandidate(pos, dbTempPos, qTempPos));
         }
         // acceptor
         loopStartPos = residueLength > 0 ? -CODON_LENGTH - residueLength : -CODON_LENGTH;
@@ -630,7 +634,9 @@ private:
             int qTempPos = qCurrPos + pos;
             bool isAcceptorSite = strand ? isAcceptorSiteF(targetSeq, dbTempPos) : isAcceptorSiteR(targetSeq, dbTempPos);
             if (isAcceptorSite)
-                acceptorSiteCands.emplace_back(splicingSiteCandidate(0, dbTempPos, qTempPos));
+                // TEMP
+//                acceptorSiteCands.emplace_back(splicingSiteCandidate(0, dbTempPos, qTempPos));
+                acceptorSiteCands.emplace_back(splicingSiteCandidate(pos, dbTempPos, qTempPos));
         }
         for (unsigned int donorCand = 0; donorCand<donorSiteCands.size(); donorCand++){
             for (unsigned int acceptorCand = 0; acceptorCand<acceptorSiteCands.size(); acceptorCand++) {
@@ -639,7 +645,9 @@ private:
                 int dbDonorSiteCandPos = donorSiteCands[donorCand].dbPos;
                 int dbAcceptorSiteCandPos = acceptorSiteCands[acceptorCand].dbPos;
                 int score;
-                int dist = qAcceptorSiteCandPos - qDonorSiteCandPos;
+                // TEMP
+//                int dist = qAcceptorSiteCandPos - qDonorSiteCandPos;
+                int dist = std::abs(donorSiteCands[donorCand].score) + std::abs(acceptorSiteCands[acceptorCand].score);
                 if (dist == 1){
                     score=3;
                 } else if (dist%3 == 1){
@@ -649,7 +657,9 @@ private:
                 } else {
                     score = -1;
                 }
-                dornorAcceptorSiteCands.emplace_back(donorAcceptorSitesCandidate(score, dist,  dbDonorSiteCandPos, dbAcceptorSiteCandPos, qDonorSiteCandPos, qAcceptorSiteCandPos));
+                // TEMP
+                if (score==3)
+                    dornorAcceptorSiteCands.emplace_back(donorAcceptorSitesCandidate(score, dist,  dbDonorSiteCandPos, dbAcceptorSiteCandPos, qDonorSiteCandPos, qAcceptorSiteCandPos));
             }
         }
         return dornorAcceptorSiteCands;
