@@ -622,9 +622,7 @@ private:
             int qTempPos = qPrevPos + pos;
             bool isDonorSite = strand? isDonorSitF(targetSeq, dbTempPos) : isDonorSiteR(targetSeq, dbTempPos);
             if (isDonorSite)
-                // TEMP
-//                donorSiteCands.emplace_back(splicingSiteCandidate(0, dbTempPos, qTempPos));
-                donorSiteCands.emplace_back(splicingSiteCandidate(pos, dbTempPos, qTempPos));
+                donorSiteCands.emplace_back(splicingSiteCandidate(0, dbTempPos, qTempPos));
         }
         // acceptor
         loopStartPos = residueLength > 0 ? -CODON_LENGTH - residueLength : -CODON_LENGTH;
@@ -634,9 +632,7 @@ private:
             int qTempPos = qCurrPos + pos;
             bool isAcceptorSite = strand ? isAcceptorSiteF(targetSeq, dbTempPos) : isAcceptorSiteR(targetSeq, dbTempPos);
             if (isAcceptorSite)
-                // TEMP
-//                acceptorSiteCands.emplace_back(splicingSiteCandidate(0, dbTempPos, qTempPos));
-                acceptorSiteCands.emplace_back(splicingSiteCandidate(pos, dbTempPos, qTempPos));
+                acceptorSiteCands.emplace_back(splicingSiteCandidate(0, dbTempPos, qTempPos));
         }
         for (unsigned int donorCand = 0; donorCand<donorSiteCands.size(); donorCand++){
             for (unsigned int acceptorCand = 0; acceptorCand<acceptorSiteCands.size(); acceptorCand++) {
@@ -645,9 +641,7 @@ private:
                 int dbDonorSiteCandPos = donorSiteCands[donorCand].dbPos;
                 int dbAcceptorSiteCandPos = acceptorSiteCands[acceptorCand].dbPos;
                 int score;
-                // TEMP
-//                int dist = qAcceptorSiteCandPos - qDonorSiteCandPos;
-                int dist = std::abs(donorSiteCands[donorCand].score) + std::abs(acceptorSiteCands[acceptorCand].score);
+                int dist = qAcceptorSiteCandPos - qDonorSiteCandPos;
                 if (dist == 1){
                     score=3;
                 } else if (dist%3 == 1){
@@ -657,9 +651,7 @@ private:
                 } else {
                     score = -1;
                 }
-                // TEMP
-                if (score==3)
-                    dornorAcceptorSiteCands.emplace_back(donorAcceptorSitesCandidate(score, dist,  dbDonorSiteCandPos, dbAcceptorSiteCandPos, qDonorSiteCandPos, qAcceptorSiteCandPos));
+                dornorAcceptorSiteCands.emplace_back(donorAcceptorSitesCandidate(score, dist,  dbDonorSiteCandPos, dbAcceptorSiteCandPos, qDonorSiteCandPos, qAcceptorSiteCandPos));
             }
         }
         return dornorAcceptorSiteCands;
