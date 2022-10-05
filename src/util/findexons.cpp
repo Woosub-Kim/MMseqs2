@@ -665,6 +665,7 @@ int findexons(int argc, const char **argv, const Command &command) {
     // TODO
     float falsePositiveFilteringRatio = (float)par.filteringRatio/100;
     //TODO
+    // DO I NEED?
     bool encludingStopCodon = (bool)par.encludingStopCodon==1;
 
     const bool touch = (par.preloadMode != Parameters::PRELOAD_MODE_MMAP);
