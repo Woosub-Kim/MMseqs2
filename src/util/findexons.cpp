@@ -175,8 +175,8 @@ public:
                     bool isMetCodon = strand? isMetCodonF(targetSeq, dbCurrPos) : isMetCodonR(targetSeq, dbCurrPos);
                     if (isMetCodon)
                         // TEMP
-//                        startCodonCands.emplace_back(splicingSiteCandidate(abs(qCurrPos), dbCurrPos, 0));
-                        startCodonCands.emplace_back(splicingSiteCandidate(abs(pos), dbCurrPos, 0));
+                        startCodonCands.emplace_back(splicingSiteCandidate(abs(qCurrPos), dbCurrPos, 0));
+//                        startCodonCands.emplace_back(splicingSiteCandidate(abs(pos), dbCurrPos, 0));
                     pos += 3;
                 }
                 if (startCodonCands.size()>0){
