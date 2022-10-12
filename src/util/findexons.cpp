@@ -298,7 +298,6 @@ private:
     const int MAX_ALIGNMENTS_OVERLAP_LENGTH = 90;
 
     IndexReader * tDbr;
-    // Do I need?
 //    IndexReader * qDbr;
     // Do I need?
 //    unsigned int queryKey;
