@@ -1,3 +1,4 @@
+
 name: Create and publish a Docker image
 
 on:
@@ -77,4 +78,3 @@ jobs:
             ${{ steps.dispatch_tag.outputs.tag }}
             ${{ steps.dispatch_tag.outputs.latest }}
           labels: ${{ steps.meta.outputs.labels }}
-
