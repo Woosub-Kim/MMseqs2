@@ -55,9 +55,9 @@ const char* Orf::iupacReverseComplementTable =
 Orf::Orf(const unsigned int requestedGenCode, bool useAllTableStarts) {
     TranslateNucl translateNucl(static_cast<TranslateNucl::GenCode>(requestedGenCode));
     std::vector<std::string> codons = translateNucl.getStopCodons();
-    stopCodons = (char*)mem_align(ALIGN_INT, 8 * sizeof(int));
-    codon      = (char*)mem_align(ALIGN_INT, 8 * sizeof(int));
-    memset(stopCodons, 0, 8 * sizeof(int));
+    stopCodons = (char*)mem_align(ALIGN_INT, 16 * sizeof(int));
+    codon      = (char*)mem_align(ALIGN_INT, 16 * sizeof(int));
+    memset(stopCodons, 0, 16 * sizeof(int));
     size_t count = 0;
     for (size_t i = 0; i < codons.size(); ++i) {
         memcpy(stopCodons + count, codons[i].c_str(), 3);
@@ -77,8 +77,8 @@ Orf::Orf(const unsigned int requestedGenCode, bool useAllTableStarts) {
         codons.push_back("ATG");
     }
 
-    startCodons = (char*)mem_align(ALIGN_INT, 8 * sizeof(int));
-    memset(startCodons, 0, 8 * sizeof(int));
+    startCodons = (char*)mem_align(ALIGN_INT, 16 * sizeof(int));
+    memset(startCodons, 0, 16 * sizeof(int));
     count = 0;
     for (size_t i = 0; i < codons.size(); ++i) {
         memcpy(startCodons + count, codons[i].c_str(), 3);
@@ -146,7 +146,7 @@ bool Orf::setSequence(const char* seq, size_t length) {
     for(size_t i = 0; i < sequenceLength; ++i) {
         reverseComplement[i] = complement(sequence[sequenceLength - i - 1]);
         if(reverseComplement[i] == '.') {
-            return false;
+            reverseComplement[i] = 'N';
         }
     }
 
@@ -207,7 +207,11 @@ inline bool isInCodons(const char* sequence, simd_int codons, simd_int) {
     // s: ATGA GTGA TGAT GAGT
     // c: ATGA ATGA ATGA ATGA
     simd_int c = simdi32_set(*(unsigned int*)sequence);
+#if SIMDE_ENDIAN_ORDER == SIMDE_ENDIAN_LITTLE
     simd_int mask = simdi32_set(0x00FFFFFF);
+#else
+    simd_int mask = simdi32_set(0xFFFFFF00);
+#endif
     // c: ATG0 ATG0 ATG0 ATG0
     c = simdi_and(mask, c);
     // t: FFFF 0000 0000 0000
@@ -252,8 +256,8 @@ void Orf::findForward(const char *sequence, const size_t sequenceLength, std::ve
     simd_int startCodonsLo = simdi_setzero();
     simd_int stopCodonsLo  = simdi_setzero();
 #else
-    simd_int startCodonsLo = simdi_load((simd_int*)startCodons + 16);
-    simd_int stopCodonsLo  = simdi_load((simd_int*)stopCodons + 16);
+    simd_int startCodonsLo = simdi_loadu((simd_int*)(startCodons + 16));
+    simd_int stopCodonsLo  = simdi_loadu((simd_int*)(stopCodons + 16));
 #endif
     for (size_t i = 0;  i < sequenceLength - (FRAMES - 1);  i += FRAMES) {
         for(size_t position = i; position < i + FRAMES; position++) {

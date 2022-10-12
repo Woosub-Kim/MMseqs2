@@ -87,14 +87,14 @@ int doswap(Parameters& par, bool isGeneralMode) {
         }
         int gapOpen, gapExtend;
         if (Parameters::isEqualDbtype(target.getDbtype(), Parameters::DBTYPE_NUCLEOTIDES)) {
-            subMat = new NucleotideMatrix(par.scoringMatrixFile.nucleotides, 1.0, 0.0);
-            gapOpen = par.gapOpen.nucleotides;
-            gapExtend = par.gapExtend.nucleotides;
+            subMat = new NucleotideMatrix(par.scoringMatrixFile.values.nucleotide().c_str(), 1.0, 0.0);
+            gapOpen = par.gapOpen.values.nucleotide();
+            gapExtend =  par.gapExtend.values.nucleotide();
         } else {
             // keep score bias at 0.0 (improved ROC)
-            subMat = new SubstitutionMatrix(par.scoringMatrixFile.aminoacids, 2.0, 0.0);
-            gapOpen = par.gapOpen.aminoacids;
-            gapExtend = par.gapExtend.aminoacids;
+            subMat = new SubstitutionMatrix(par.scoringMatrixFile.values.aminoacid().c_str(), 2.0, 0.0);
+            gapOpen = par.gapOpen.values.aminoacid();
+            gapExtend = par.gapExtend.values.aminoacid();
         }
         evaluer = new EvalueComputation(aaResSize, subMat, gapOpen, gapExtend);
     }
@@ -167,8 +167,8 @@ int doswap(Parameters& par, bool isGeneralMode) {
     for (size_t split = 0; split < splits.size(); split++) {
         unsigned int dbKeyToWrite = splits[split].first;
         size_t bytesToWrite = splits[split].second;
-        char *tmpData = new char[bytesToWrite];
-        Util::checkAllocation(tmpData, "Can not allocate tmpData memory in doswap");
+        char *tmpData = new(std::nothrow) char[bytesToWrite];
+        Util::checkAllocation(tmpData, "Cannot allocate tmpData memory");
         Debug(Debug::INFO) << "\nReading results.\n";
         Debug::Progress progress(resultSize);
 #pragma omp parallel
@@ -248,7 +248,7 @@ int doswap(Parameters& par, bool isGeneralMode) {
             std::vector<Matcher::result_t> curRes;
             curRes.reserve(300);
 
-            char buffer[1024+32768];
+            char buffer[1024 + 32768*4];
             std::string ss;
             ss.reserve(100000);
 

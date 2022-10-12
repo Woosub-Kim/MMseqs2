@@ -168,7 +168,7 @@ size_t CacheFriendlyOperations<BINSIZE>::findDuplicates(CounterResult *output, s
             duplicateBitArray[hashBinElement] = currDiagonal;
         }
         // check for overflow
-        if (doubleElementCount + elementCount >= outputSize) {
+        if (doubleElementCount + std::min(elementCount, currBinSize/2) >= outputSize) {
             return doubleElementCount;
         }
         // set memory to zero
@@ -252,14 +252,14 @@ bool CacheFriendlyOperations<BINSIZE>::checkForOverflowAndResizeArray(bool inclu
 
             delete[] binDataFrame;
             binDataFrame = new(std::nothrow) CounterResult[BINCOUNT * binSize];
-            memset(binDataFrame, 0, sizeof(CounterResult) * binSize * BINCOUNT);
             Util::checkAllocation(binDataFrame, "Cannot reallocate reallocBinMemory in CacheFriendlyOperations");
+            memset(binDataFrame, 0, sizeof(CounterResult) * binSize * BINCOUNT);
 
             if (includeTmpResult) {
                 delete[] tmpElementBuffer;
                 tmpElementBuffer = new(std::nothrow) TmpResult[binSize];
-                memset(tmpElementBuffer, 0, sizeof(TmpResult) * binSize);
                 Util::checkAllocation(tmpElementBuffer, "Cannot reallocate tmpElementBuffer in CacheFriendlyOperations");
+                memset(tmpElementBuffer, 0, sizeof(TmpResult) * binSize);
             }
             return true;
         }

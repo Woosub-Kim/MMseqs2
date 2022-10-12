@@ -9,10 +9,11 @@ const unsigned int CITATION_UNICLUST = 1U << 2;
 const unsigned int CITATION_LINCLUST = 1U << 3;
 const unsigned int CITATION_PLASS    = 1U << 4;
 const unsigned int CITATION_SERVER   = 1U << 5;
+const unsigned int CITATION_TAXONOMY = 1U << 6;
 
 // Make sure this is always the last bit
 // citations from inheriting modules will start from here
-const unsigned int CITATION_END      = CITATION_SERVER << 1;
+const unsigned int CITATION_END      = CITATION_TAXONOMY << 1;
 
 struct MMseqsParameter;
 
@@ -52,6 +53,7 @@ struct DbValidator {
     static std::vector<int> prefilterDb;
     static std::vector<int> clusterDb;
     static std::vector<int> resultDb;
+    static std::vector<int> ppResultDb;
     static std::vector<int> ca3mDb;
     static std::vector<int> msaDb;
     static std::vector<int> genericDb;
@@ -61,10 +63,12 @@ struct DbValidator {
     static std::vector<int> allDb;
     static std::vector<int> allDbAndFlat;
     static std::vector<int> taxResult;
+    static std::vector<int> taxonomyReportInput;
     static std::vector<int> directory;
     static std::vector<int> flatfile;
     static std::vector<int> flatfileAndStdin;
     static std::vector<int> flatfileStdinAndGeneric;
+    static std::vector<int> flatfileStdinGenericUri;
     static std::vector<int> empty;
 };
 

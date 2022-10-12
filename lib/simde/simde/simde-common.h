@@ -30,9 +30,10 @@
 #include "hedley.h"
 
 #define SIMDE_VERSION_MAJOR 0
-#define SIMDE_VERSION_MINOR 5
-#define SIMDE_VERSION_MICRO 0
+#define SIMDE_VERSION_MINOR 7
+#define SIMDE_VERSION_MICRO 3
 #define SIMDE_VERSION HEDLEY_VERSION_ENCODE(SIMDE_VERSION_MAJOR, SIMDE_VERSION_MINOR, SIMDE_VERSION_MICRO)
+// Also update meson.build in the root directory of the repository
 
 #include <stddef.h>
 #include <stdint.h>
@@ -43,6 +44,7 @@
 #include "simde-diagnostic.h"
 #include "simde-math.h"
 #include "simde-constify.h"
+#include "simde-align.h"
 
 /* In some situations, SIMDe has to make large performance sacrifices
  * for small increases in how faithfully it reproduces an API, but
@@ -96,57 +98,30 @@
 #endif
 
 /* This controls how ties are rounded.  For example, does 10.5 round to
- * 10 or 11?  IEEE 754 specifies round-towards-even, but on ARMv7 (for
+ * 10 or 11?  IEEE 754 specifies round-towards-even, but ARMv7 (for
  * example) doesn't support it and it must be emulated (which is rather
  * slow).  If you're okay with just using the default for whatever arch
- * you're on, you should definitely define this. */
+ * you're on, you should definitely define this.
+ *
+ * Note that we don't use this macro to avoid correct implementations
+ * in functions which are explicitly about rounding (such as vrnd* on
+ * NEON, _mm_round_* on x86, etc.); it is only used for code where
+ * rounding is a component in another function, and even then it isn't
+ * usually a problem since such functions will use the current rounding
+ * mode. */
 #if !defined(SIMDE_FAST_ROUND_TIES) && !defined(SIMDE_NO_FAST_ROUND_TIES) && defined(SIMDE_FAST_MATH)
   #define SIMDE_FAST_ROUND_TIES
 #endif
 
-#if \
-  HEDLEY_HAS_ATTRIBUTE(aligned) || \
-  HEDLEY_GCC_VERSION_CHECK(2,95,0) || \
-  HEDLEY_CRAY_VERSION_CHECK(8,4,0) || \
-  HEDLEY_IBM_VERSION_CHECK(11,1,0) || \
-  HEDLEY_INTEL_VERSION_CHECK(13,0,0) || \
-  HEDLEY_PGI_VERSION_CHECK(19,4,0) || \
-  HEDLEY_ARM_VERSION_CHECK(4,1,0) || \
-  HEDLEY_TINYC_VERSION_CHECK(0,9,24) || \
-  HEDLEY_TI_VERSION_CHECK(8,1,0)
-#  define SIMDE_ALIGN(alignment) __attribute__((aligned(alignment)))
-#elif defined(_MSC_VER) && !(defined(_M_ARM) && !defined(_M_ARM64))
-#  define SIMDE_ALIGN(alignment) __declspec(align(alignment))
-#elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
-#  define SIMDE_ALIGN(alignment) _Alignas(alignment)
-#elif defined(__cplusplus) && (__cplusplus >= 201103L)
-#  define SIMDE_ALIGN(alignment) alignas(alignment)
-#else
-#  define SIMDE_ALIGN(alignment)
+/* For functions which convert from one type to another (mostly from
+ * floating point to integer types), sometimes we need to do a range
+ * check and potentially return a different result if the value
+ * falls outside that range.  Skipping this check can provide a
+ * performance boost, at the expense of faithfulness to the API we're
+ * emulating. */
+#if !defined(SIMDE_FAST_CONVERSION_RANGE) && !defined(SIMDE_NO_FAST_CONVERSION_RANGE) && defined(SIMDE_FAST_MATH)
+  #define SIMDE_FAST_CONVERSION_RANGE
 #endif
-
-#if HEDLEY_GNUC_VERSION_CHECK(2,95,0) || \
-    HEDLEY_ARM_VERSION_CHECK(4,1,0) || \
-    HEDLEY_IBM_VERSION_CHECK(11,1,0)
-#  define SIMDE_ALIGN_OF(T) (__alignof__(T))
-#elif \
-  (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)) || \
-  HEDLEY_HAS_FEATURE(c11_alignof)
-#  define SIMDE_ALIGN_OF(T) (_Alignof(T))
-#elif \
-  (defined(__cplusplus) && (__cplusplus >= 201103L)) || \
-  HEDLEY_HAS_FEATURE(cxx_alignof)
-#  define SIMDE_ALIGN_OF(T) (alignof(T))
-#endif
-
-#if defined(SIMDE_ALIGN_OF)
-#  define SIMDE_ALIGN_AS(N, T) SIMDE_ALIGN(SIMDE_ALIGN_OF(T))
-#else
-#  define SIMDE_ALIGN_AS(N, T) SIMDE_ALIGN(N)
-#endif
-
-#define simde_assert_aligned(alignment, val) \
-  simde_assert_int(HEDLEY_REINTERPRET_CAST(uintptr_t, HEDLEY_REINTERPRET_CAST(const void*, (val))) % (alignment), ==, 0)
 
 #if \
     HEDLEY_HAS_BUILTIN(__builtin_constant_p) || \
@@ -157,7 +132,8 @@
     HEDLEY_IBM_VERSION_CHECK(13,1,0) || \
     HEDLEY_TI_CL6X_VERSION_CHECK(6,1,0) || \
     (HEDLEY_SUNPRO_VERSION_CHECK(5,10,0) && !defined(__cplusplus)) || \
-    HEDLEY_CRAY_VERSION_CHECK(8,1,0)
+    HEDLEY_CRAY_VERSION_CHECK(8,1,0) || \
+    HEDLEY_MCST_LCC_VERSION_CHECK(1,25,10)
   #define SIMDE_CHECK_CONSTANT_(expr) (__builtin_constant_p(expr))
 #elif defined(__cplusplus) && (__cplusplus > 201703L)
   #include <type_traits>
@@ -201,42 +177,20 @@
 #  define SIMDE_STATIC_ASSERT(expr, message) HEDLEY_DIAGNOSTIC_DISABLE_CPP98_COMPAT_WRAP_(static_assert(expr, message))
 #endif
 
-/* SIMDE_ASSUME_ALIGNED allows you to (try to) tell the compiler
- * that a pointer is aligned to an `alignment`-byte boundary. */
+/* Statement exprs */
 #if \
-    HEDLEY_HAS_BUILTIN(__builtin_assume_aligned) || \
-    HEDLEY_GCC_VERSION_CHECK(4,7,0)
-  #define SIMDE_ASSUME_ALIGNED(alignment, v) HEDLEY_REINTERPRET_CAST(__typeof__(v), __builtin_assume_aligned(v, alignment))
-#elif defined(__cplusplus) && (__cplusplus > 201703L)
-  #define SIMDE_ASSUME_ALIGNED(alignment, v) std::assume_aligned<alignment>(v)
-#elif HEDLEY_INTEL_VERSION_CHECK(13,0,0)
-  #define SIMDE_ASSUME_ALIGNED(alignment, v) (__extension__ ({ \
-      __typeof__(v) simde_assume_aligned_t_ = (v); \
-      __assume_aligned(simde_assume_aligned_t_, alignment); \
-      simde_assume_aligned_t_; \
-    }))
-#else
-  #define SIMDE_ASSUME_ALIGNED(alignment, v) (v)
+    HEDLEY_GNUC_VERSION_CHECK(2,95,0) || \
+    HEDLEY_TINYC_VERSION_CHECK(0,9,26) || \
+    HEDLEY_INTEL_VERSION_CHECK(9,0,0) || \
+    HEDLEY_PGI_VERSION_CHECK(18,10,0) || \
+    HEDLEY_SUNPRO_VERSION_CHECK(5,12,0) || \
+    HEDLEY_IBM_VERSION_CHECK(11,1,0) || \
+    HEDLEY_MCST_LCC_VERSION_CHECK(1,25,10)
+  #define SIMDE_STATEMENT_EXPR_(expr) (__extension__ expr)
 #endif
 
-#if defined(SIMDE_ALIGN_OF)
-  #define SIMDE_ASSUME_ALIGNED_AS(T, v) SIMDE_ASSUME_ALIGNED(SIMDE_ALIGN_OF(T), v)
-#else
-  #define SIMDE_ASSUME_ALIGNED_AS(T, v) (v)
-#endif
-
-/* SIMDE_ALIGN_CAST allows you to convert to a type with greater
- * aligment requirements without triggering a warning. */
-#if HEDLEY_HAS_WARNING("-Wcast-align") || defined(__clang__) || HEDLEY_GCC_VERSION_CHECK(3,4,0)
-  #define SIMDE_ALIGN_CAST(T, v) (__extension__({ \
-      HEDLEY_DIAGNOSTIC_PUSH \
-      _Pragma("GCC diagnostic ignored \"-Wcast-align\"") \
-      T simde_r_ = HEDLEY_REINTERPRET_CAST(T, v); \
-      HEDLEY_DIAGNOSTIC_POP \
-      simde_r_; \
-    }))
-#else
-  #define SIMDE_ALIGN_CAST(T, v) HEDLEY_REINTERPRET_CAST(T, v)
+#if defined(SIMDE_CHECK_CONSTANT_) && defined(SIMDE_STATIC_ASSERT)
+  #define SIMDE_ASSERT_CONSTANT_(v) SIMDE_STATIC_ASSERT(SIMDE_CHECK_CONSTANT_(v), #v " must be constant.")
 #endif
 
 #if \
@@ -280,7 +234,8 @@
 #    define SIMDE_VECTOR_SUBSCRIPT
 #  elif \
     HEDLEY_GCC_VERSION_CHECK(4,1,0) || \
-    HEDLEY_INTEL_VERSION_CHECK(13,0,0)
+    HEDLEY_INTEL_VERSION_CHECK(13,0,0) || \
+    HEDLEY_MCST_LCC_VERSION_CHECK(1,25,10)
 #    define SIMDE_VECTOR(size) __attribute__((__vector_size__(size)))
 #    define SIMDE_VECTOR_OPS
 #  elif HEDLEY_SUNPRO_VERSION_CHECK(5,12,0)
@@ -354,8 +309,10 @@
 #  endif
 #endif
 
-#if !defined(SIMDE_ENABLE_OPENMP) && ((defined(_OPENMP) && (_OPENMP >= 201307L)) || (defined(_OPENMP_SIMD) && (_OPENMP_SIMD >= 201307L)))
-#  define SIMDE_ENABLE_OPENMP
+#if !defined(SIMDE_DISABLE_OPENMP)
+  #if !defined(SIMDE_ENABLE_OPENMP) && ((defined(_OPENMP) && (_OPENMP >= 201307L)) || (defined(_OPENMP_SIMD) && (_OPENMP_SIMD >= 201307L))) || defined(HEDLEY_MCST_LCC_VERSION)
+    #define SIMDE_ENABLE_OPENMP
+  #endif
 #endif
 
 #if !defined(SIMDE_ENABLE_CILKPLUS) && (defined(__cilk) || defined(HEDLEY_INTEL_VERSION))
@@ -560,9 +517,20 @@ typedef SIMDE_FLOAT32_TYPE simde_float32;
 #  define SIMDE_FLOAT64_TYPE double
 #  define SIMDE_FLOAT64_C(value) value
 #else
-#  define SIMDE_FLOAT32_C(value) ((SIMDE_FLOAT64_TYPE) value)
+#  define SIMDE_FLOAT64_C(value) ((SIMDE_FLOAT64_TYPE) value)
 #endif
 typedef SIMDE_FLOAT64_TYPE simde_float64;
+
+#if defined(__cplusplus)
+  typedef bool simde_bool;
+#elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+  typedef _Bool simde_bool;
+#elif defined(bool)
+  typedef bool simde_bool;
+#else
+  #include <stdbool.h>
+  typedef bool simde_bool;
+#endif
 
 #if HEDLEY_HAS_WARNING("-Wbad-function-cast")
 #  define SIMDE_CONVERT_FTOI(T,v) \
@@ -741,7 +709,103 @@ typedef SIMDE_FLOAT64_TYPE simde_float64;
 #  include <fenv.h>
 #endif
 
+#define SIMDE_DEFINE_CONVERSION_FUNCTION_(Name, T_To, T_From) \
+  static HEDLEY_ALWAYS_INLINE HEDLEY_CONST \
+  T_To \
+  Name (T_From value) { \
+    T_To r; \
+    simde_memcpy(&r, &value, sizeof(r)); \
+    return r; \
+  }
+
 #include "check.h"
+
+/* GCC/clang have a bunch of functionality in builtins which we would
+ * like to access, but the suffixes indicate whether the operate on
+ * int, long, or long long, not fixed width types (e.g., int32_t).
+ * we use these macros to attempt to map from fixed-width to the
+ * names GCC uses.  Note that you should still cast the input(s) and
+ * return values (to/from SIMDE_BUILTIN_TYPE_*_) since often even if
+ * types are the same size they may not be compatible according to the
+ * compiler.  For example, on x86 long and long lonsg are generally
+ * both 64 bits, but platforms vary on whether an int64_t is mapped
+ * to a long or long long. */
+
+#include <limits.h>
+
+HEDLEY_DIAGNOSTIC_PUSH
+SIMDE_DIAGNOSTIC_DISABLE_CPP98_COMPAT_PEDANTIC_
+
+#if (INT8_MAX == INT_MAX) && (INT8_MIN == INT_MIN)
+  #define SIMDE_BUILTIN_SUFFIX_8_
+  #define SIMDE_BUILTIN_TYPE_8_ int
+#elif (INT8_MAX == LONG_MAX) && (INT8_MIN == LONG_MIN)
+  #define SIMDE_BUILTIN_SUFFIX_8_ l
+  #define SIMDE_BUILTIN_TYPE_8_ long
+#elif (INT8_MAX == LLONG_MAX) && (INT8_MIN == LLONG_MIN)
+  #define SIMDE_BUILTIN_SUFFIX_8_ ll
+  #define SIMDE_BUILTIN_TYPE_8_ long long
+#endif
+
+#if (INT16_MAX == INT_MAX) && (INT16_MIN == INT_MIN)
+  #define SIMDE_BUILTIN_SUFFIX_16_
+  #define SIMDE_BUILTIN_TYPE_16_ int
+#elif (INT16_MAX == LONG_MAX) && (INT16_MIN == LONG_MIN)
+  #define SIMDE_BUILTIN_SUFFIX_16_ l
+  #define SIMDE_BUILTIN_TYPE_16_ long
+#elif (INT16_MAX == LLONG_MAX) && (INT16_MIN == LLONG_MIN)
+  #define SIMDE_BUILTIN_SUFFIX_16_ ll
+  #define SIMDE_BUILTIN_TYPE_16_ long long
+#endif
+
+#if (INT32_MAX == INT_MAX) && (INT32_MIN == INT_MIN)
+  #define SIMDE_BUILTIN_SUFFIX_32_
+  #define SIMDE_BUILTIN_TYPE_32_ int
+#elif (INT32_MAX == LONG_MAX) && (INT32_MIN == LONG_MIN)
+  #define SIMDE_BUILTIN_SUFFIX_32_ l
+  #define SIMDE_BUILTIN_TYPE_32_ long
+#elif (INT32_MAX == LLONG_MAX) && (INT32_MIN == LLONG_MIN)
+  #define SIMDE_BUILTIN_SUFFIX_32_ ll
+  #define SIMDE_BUILTIN_TYPE_32_ long long
+#endif
+
+#if (INT64_MAX == INT_MAX) && (INT64_MIN == INT_MIN)
+  #define SIMDE_BUILTIN_SUFFIX_64_
+  #define SIMDE_BUILTIN_TYPE_64_ int
+#elif (INT64_MAX == LONG_MAX) && (INT64_MIN == LONG_MIN)
+  #define SIMDE_BUILTIN_SUFFIX_64_ l
+  #define SIMDE_BUILTIN_TYPE_64_ long
+#elif (INT64_MAX == LLONG_MAX) && (INT64_MIN == LLONG_MIN)
+  #define SIMDE_BUILTIN_SUFFIX_64_ ll
+  #define SIMDE_BUILTIN_TYPE_64_ long long
+#endif
+
+#if defined(SIMDE_BUILTIN_SUFFIX_8_)
+  #define SIMDE_BUILTIN_8_(name) HEDLEY_CONCAT3(__builtin_, name, SIMDE_BUILTIN_SUFFIX_8_)
+  #define SIMDE_BUILTIN_HAS_8_(name) HEDLEY_HAS_BUILTIN(HEDLEY_CONCAT3(__builtin_, name, SIMDE_BUILTIN_SUFFIX_8_))
+#else
+  #define SIMDE_BUILTIN_HAS_8_(name) 0
+#endif
+#if defined(SIMDE_BUILTIN_SUFFIX_16_)
+  #define SIMDE_BUILTIN_16_(name) HEDLEY_CONCAT3(__builtin_, name, SIMDE_BUILTIN_SUFFIX_16_)
+  #define SIMDE_BUILTIN_HAS_16_(name) HEDLEY_HAS_BUILTIN(HEDLEY_CONCAT3(__builtin_, name, SIMDE_BUILTIN_SUFFIX_16_))
+#else
+  #define SIMDE_BUILTIN_HAS_16_(name) 0
+#endif
+#if defined(SIMDE_BUILTIN_SUFFIX_32_)
+  #define SIMDE_BUILTIN_32_(name) HEDLEY_CONCAT3(__builtin_, name, SIMDE_BUILTIN_SUFFIX_32_)
+  #define SIMDE_BUILTIN_HAS_32_(name) HEDLEY_HAS_BUILTIN(HEDLEY_CONCAT3(__builtin_, name, SIMDE_BUILTIN_SUFFIX_32_))
+#else
+  #define SIMDE_BUILTIN_HAS_32_(name) 0
+#endif
+#if defined(SIMDE_BUILTIN_SUFFIX_64_)
+  #define SIMDE_BUILTIN_64_(name) HEDLEY_CONCAT3(__builtin_, name, SIMDE_BUILTIN_SUFFIX_64_)
+  #define SIMDE_BUILTIN_HAS_64_(name) HEDLEY_HAS_BUILTIN(HEDLEY_CONCAT3(__builtin_, name, SIMDE_BUILTIN_SUFFIX_64_))
+#else
+  #define SIMDE_BUILTIN_HAS_64_(name) 0
+#endif
+
+HEDLEY_DIAGNOSTIC_POP
 
 /* Sometimes we run into problems with specific versions of compilers
    which make the native versions unusable for us.  Often this is due
@@ -757,6 +821,9 @@ typedef SIMDE_FLOAT64_TYPE simde_float64;
 #    if !HEDLEY_GCC_VERSION_CHECK(5,0,0)
 #      define SIMDE_BUG_GCC_BAD_MM_SRA_EPI32 /* TODO: find relevant bug or commit */
 #    endif
+#    if !HEDLEY_GCC_VERSION_CHECK(6,0,0)
+#      define SIMDE_BUG_GCC_SIZEOF_IMMEDIATE
+#    endif
 #    if !HEDLEY_GCC_VERSION_CHECK(4,6,0)
 #      define SIMDE_BUG_GCC_BAD_MM_EXTRACT_EPI8 /* TODO: find relevant bug or commit */
 #    endif
@@ -770,19 +837,29 @@ typedef SIMDE_FLOAT64_TYPE simde_float64;
 #    if !HEDLEY_GCC_VERSION_CHECK(9,0,0) && defined(SIMDE_ARCH_AARCH64)
 #      define SIMDE_BUG_GCC_ARM_SHIFT_SCALAR
 #    endif
+#    if !HEDLEY_GCC_VERSION_CHECK(9,0,0) && defined(SIMDE_ARCH_AARCH64)
+#      define SIMDE_BUG_GCC_BAD_VEXT_REV32
+#    endif
 #    if defined(SIMDE_ARCH_X86) && !defined(SIMDE_ARCH_AMD64)
 #      define SIMDE_BUG_GCC_94482
 #    endif
-#    if (defined(SIMDE_ARCH_X86) && !defined(SIMDE_ARCH_AMD64)) || defined(SIMDE_ARCH_SYSTEMZ)
+#    if (defined(SIMDE_ARCH_X86) && !defined(SIMDE_ARCH_AMD64)) || defined(SIMDE_ARCH_ZARCH)
 #      define SIMDE_BUG_GCC_53784
 #    endif
 #    if defined(SIMDE_ARCH_X86) || defined(SIMDE_ARCH_AMD64)
 #      if HEDLEY_GCC_VERSION_CHECK(4,3,0) /* -Wsign-conversion */
 #        define SIMDE_BUG_GCC_95144
 #      endif
+#      if !HEDLEY_GCC_VERSION_CHECK(11,0,0)
+#        define SIMDE_BUG_GCC_95483
+#      endif
+#      define SIMDE_BUG_GCC_98521
 #    endif
 #    if !HEDLEY_GCC_VERSION_CHECK(9,4,0) && defined(SIMDE_ARCH_AARCH64)
 #      define SIMDE_BUG_GCC_94488
+#    endif
+#    if !HEDLEY_GCC_VERSION_CHECK(9,1,0) && defined(SIMDE_ARCH_AARCH64)
+#      define SIMDE_BUG_GCC_REV_264019
 #    endif
 #    if defined(SIMDE_ARCH_ARM)
 #      define SIMDE_BUG_GCC_95399
@@ -794,20 +871,59 @@ typedef SIMDE_FLOAT64_TYPE simde_float64;
 #      if !HEDLEY_GCC_VERSION_CHECK(10,2,0) && !defined(__OPTIMIZE__)
 #        define SIMDE_BUG_GCC_96174
 #      endif
+#    elif defined(SIMDE_ARCH_ZARCH)
+#      if !HEDLEY_GCC_VERSION_CHECK(9,0,0)
+#        define SIMDE_BUG_GCC_95782
+#      endif
 #    endif
 #    define SIMDE_BUG_GCC_95399
 #  elif defined(__clang__)
 #    if defined(SIMDE_ARCH_AARCH64)
 #      define SIMDE_BUG_CLANG_45541
 #      define SIMDE_BUG_CLANG_46844
+#      define SIMDE_BUG_CLANG_48257
+#      if SIMDE_DETECT_CLANG_VERSION_CHECK(10,0,0) && SIMDE_DETECT_CLANG_VERSION_NOT(11,0,0)
+#        define SIMDE_BUG_CLANG_BAD_VI64_OPS
+#      endif
+#      if SIMDE_DETECT_CLANG_VERSION_NOT(9,0,0)
+#        define SIMDE_BUG_CLANG_GIT_4EC445B8
+#        define SIMDE_BUG_CLANG_REV_365298 /* 0464e07c8f6e3310c28eb210a4513bc2243c2a7e */
+#      endif
+#    endif
+#    if defined(SIMDE_ARCH_ARM)
+#      if !SIMDE_DETECT_CLANG_VERSION_CHECK(11,0,0)
+#        define SIMDE_BUG_CLANG_BAD_VGET_SET_LANE_TYPES
+#      endif
 #    endif
 #    if defined(SIMDE_ARCH_POWER)
 #      define SIMDE_BUG_CLANG_46770
 #    endif
+#    if defined(_ARCH_PWR9) && !SIMDE_DETECT_CLANG_VERSION_CHECK(12,0,0) && !defined(__OPTIMIZE__)
+#      define SIMDE_BUG_CLANG_POWER9_16x4_BAD_SHIFT
+#    endif
 #    if defined(SIMDE_ARCH_X86) || defined(SIMDE_ARCH_AMD64)
+#      if SIMDE_DETECT_CLANG_VERSION_NOT(5,0,0)
+#        define SIMDE_BUG_CLANG_REV_298042 /* 6afc436a7817a52e78ae7bcdc3faafd460124cac */
+#      endif
+#      if SIMDE_DETECT_CLANG_VERSION_NOT(3,7,0)
+#        define SIMDE_BUG_CLANG_REV_234560 /* b929ad7b1726a32650a8051f69a747fb6836c540 */
+#      endif
+#      if SIMDE_DETECT_CLANG_VERSION_CHECK(3,8,0) && SIMDE_DETECT_CLANG_VERSION_NOT(5,0,0)
+#        define SIMDE_BUG_CLANG_BAD_MADD
+#      endif
+#      if SIMDE_DETECT_CLANG_VERSION_CHECK(4,0,0) && SIMDE_DETECT_CLANG_VERSION_NOT(5,0,0)
+#        define SIMDE_BUG_CLANG_REV_299346 /* ac9959eb533a58482ea4da6c4db1e635a98de384 */
+#      endif
+#      if SIMDE_DETECT_CLANG_VERSION_NOT(8,0,0)
+#        define SIMDE_BUG_CLANG_REV_344862 /* eae26bf73715994c2bd145f9b6dc3836aa4ffd4f */
+#      endif
 #      if HEDLEY_HAS_WARNING("-Wsign-conversion") && SIMDE_DETECT_CLANG_VERSION_NOT(11,0,0)
 #        define SIMDE_BUG_CLANG_45931
 #      endif
+#      if HEDLEY_HAS_WARNING("-Wvector-conversion") && SIMDE_DETECT_CLANG_VERSION_NOT(11,0,0)
+#        define SIMDE_BUG_CLANG_44589
+#      endif
+#      define SIMDE_BUG_CLANG_48673
 #    endif
 #    define SIMDE_BUG_CLANG_45959
 #  elif defined(HEDLEY_MSVC_VERSION)
@@ -816,10 +932,8 @@ typedef SIMDE_FLOAT64_TYPE simde_float64;
 #    endif
 #  elif defined(HEDLEY_INTEL_VERSION)
 #    define SIMDE_BUG_INTEL_857088
-#  endif
-#  if defined(HEDLEY_EMSCRIPTEN_VERSION)
-#    define SIMDE_BUG_EMSCRIPTEN_MISSING_IMPL /* Placeholder for (as yet) unfiled issues. */
-#    define SIMDE_BUG_EMSCRIPTEN_5242
+#  elif defined(HEDLEY_MCST_LCC_VERSION)
+#    define SIMDE_BUG_MCST_LCC_MISSING_AVX_LOAD_STORE_M128_FUNCS
 #  endif
 #endif
 
@@ -841,6 +955,16 @@ typedef SIMDE_FLOAT64_TYPE simde_float64;
      }))
 #else
 #  define SIMDE_BUG_IGNORE_SIGN_CONVERSION(expr) (expr)
+#endif
+
+/* Usually the shift count is signed (for example, NEON or SSE).
+ * OTOH, unsigned is good for PPC (vec_srl uses unsigned), and the only option for E2K.
+ * Further info: https://github.com/simd-everywhere/simde/pull/700
+ */
+#if defined(SIMDE_ARCH_E2K) || defined(SIMDE_ARCH_POWER)
+  #define SIMDE_CAST_VECTOR_SHIFT_COUNT(width, value) HEDLEY_STATIC_CAST(uint##width##_t, (value))
+#else
+  #define SIMDE_CAST_VECTOR_SHIFT_COUNT(width, value) HEDLEY_STATIC_CAST(int##width##_t, (value))
 #endif
 
 #endif /* !defined(SIMDE_COMMON_H) */

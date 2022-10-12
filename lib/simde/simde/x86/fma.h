@@ -49,7 +49,7 @@ simde_mm_fmadd_pd (simde__m128d a, simde__m128d b, simde__m128d c) {
       c_ = simde__m128d_to_private(c),
       r_;
 
-    #if defined(SIMDE_POWER_ALTIVEC_P7_NATIVE)
+    #if defined(SIMDE_POWER_ALTIVEC_P7_NATIVE) || defined(SIMDE_ZARCH_ZVECTOR_13_NATIVE)
       r_.altivec_f64 = vec_madd(a_.altivec_f64, b_.altivec_f64, c_.altivec_f64);
     #elif defined(SIMDE_ARM_NEON_A64V8_NATIVE)
       r_.neon_f64 = vmlaq_f64(c_.neon_f64, b_.neon_f64, a_.neon_f64);
@@ -110,7 +110,7 @@ simde_mm_fmadd_ps (simde__m128 a, simde__m128 b, simde__m128 c) {
     #elif defined(simde_math_fmaf) && (defined(__FP_FAST_FMAF) || defined(FP_FAST_FMAF))
       SIMDE_VECTORIZE
       for (size_t i = 0 ; i < (sizeof(r_.f32) / sizeof(r_.f32[0])) ; i++) {
-        r_.f32[i] = simde_math_fma(a_.f32[i], b_.f32[i], c_.f32[i]);
+        r_.f32[i] = simde_math_fmaf(a_.f32[i], b_.f32[i], c_.f32[i]);
       }
     #else
       SIMDE_VECTORIZE

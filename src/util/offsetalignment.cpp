@@ -260,16 +260,10 @@ int offsetalignment(int argc, const char **argv, const Command &command) {
     DBReader<unsigned int> alnDbr(par.db5.c_str(), par.db5Index.c_str(), par.threads, DBReader<unsigned int>::USE_INDEX|DBReader<unsigned int>::USE_DATA);
     alnDbr.open(DBReader<unsigned int>::LINEAR_ACCCESS);
 
+    size_t localThreads = 1;
 #ifdef OPENMP
-    unsigned int totalThreads = par.threads;
-#else
-    unsigned int totalThreads = 1;
+    localThreads = std::max(std::min((size_t)par.threads, alnDbr.getSize()), (size_t)1);
 #endif
-
-    unsigned int localThreads = totalThreads;
-    if (alnDbr.getSize() <= totalThreads) {
-        localThreads = alnDbr.getSize();
-    }
 
     // Compute mapping from contig -> orf[] from orf[]->contig in headers
     unsigned int *contigLookup = NULL;
@@ -356,7 +350,7 @@ int offsetalignment(int argc, const char **argv, const Command &command) {
 #ifdef OPENMP
         thread_idx = static_cast<unsigned int>(omp_get_thread_num());
 #endif
-        char * buffer = new char[65536];
+        char buffer[1024 + 32768*4];
 
         std::string ss;
         ss.reserve(1024);
@@ -469,7 +463,6 @@ int offsetalignment(int argc, const char **argv, const Command &command) {
                 tmp.clear();
             }
         }
-        delete[] buffer;
     }
     Debug(Debug::INFO) << "\n";
     resultWriter.close();

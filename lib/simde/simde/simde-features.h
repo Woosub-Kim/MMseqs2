@@ -43,6 +43,24 @@
   #define SIMDE_X86_AVX512F_NATIVE
 #endif
 
+#if !defined(SIMDE_X86_AVX512VP2INTERSECT_NATIVE) && !defined(SIMDE_X86_AVX512VP2INTERSECT_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
+  #if defined(SIMDE_ARCH_X86_AVX512VP2INTERSECT)
+    #define SIMDE_X86_AVX512VP2INTERSECT_NATIVE
+  #endif
+#endif
+#if defined(SIMDE_X86_AVX512VP2INTERSECT_NATIVE) && !defined(SIMDE_X86_AVX512F_NATIVE)
+  #define SIMDE_X86_AVX512F_NATIVE
+#endif
+
+#if !defined(SIMDE_X86_AVX512VBMI_NATIVE) && !defined(SIMDE_X86_AVX512VBMI_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
+  #if defined(SIMDE_ARCH_X86_AVX512VBMI)
+    #define SIMDE_X86_AVX512VBMI_NATIVE
+  #endif
+#endif
+#if defined(SIMDE_X86_AVX512VBMI_NATIVE) && !defined(SIMDE_X86_AVX512F_NATIVE)
+  #define SIMDE_X86_AVX512F_NATIVE
+#endif
+
 #if !defined(SIMDE_X86_AVX512CD_NATIVE) && !defined(SIMDE_X86_AVX512CD_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
   #if defined(SIMDE_ARCH_X86_AVX512CD)
     #define SIMDE_X86_AVX512CD_NATIVE
@@ -115,6 +133,15 @@
   #define SIMDE_X86_SSE4_2_NATIVE
 #endif
 
+#if !defined(SIMDE_X86_XOP_NATIVE) && !defined(SIMDE_X86_XOP_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
+  #if defined(SIMDE_ARCH_X86_XOP)
+    #define SIMDE_X86_XOP_NATIVE
+  #endif
+#endif
+#if defined(SIMDE_X86_XOP_NATIVE) && !defined(SIMDE_X86_SSE4_2_NATIVE)
+  #define SIMDE_X86_SSE4_2_NATIVE
+#endif
+
 #if !defined(SIMDE_X86_SSE4_2_NATIVE) && !defined(SIMDE_X86_SSE4_2_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
   #if defined(SIMDE_ARCH_X86_SSE4_2)
     #define SIMDE_X86_SSE4_2_NATIVE
@@ -178,6 +205,24 @@
   #endif
 #endif
 
+#if !defined(SIMDE_X86_PCLMUL_NATIVE) && !defined(SIMDE_X86_PCLMUL_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
+  #if defined(SIMDE_ARCH_X86_PCLMUL)
+    #define SIMDE_X86_PCLMUL_NATIVE
+  #endif
+#endif
+
+#if !defined(SIMDE_X86_VPCLMULQDQ_NATIVE) && !defined(SIMDE_X86_VPCLMULQDQ_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
+  #if defined(SIMDE_ARCH_X86_VPCLMULQDQ)
+    #define SIMDE_X86_VPCLMULQDQ_NATIVE
+  #endif
+#endif
+
+#if !defined(SIMDE_X86_F16C_NATIVE) && !defined(SIMDE_X86_F16C_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
+  #if defined(SIMDE_ARCH_X86_F16C)
+    #define SIMDE_X86_F16C_NATIVE
+  #endif
+#endif
+
 #if !defined(SIMDE_X86_SVML_NATIVE) && !defined(SIMDE_X86_SVML_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
   #if defined(__INTEL_COMPILER)
     #define SIMDE_X86_SVML_NATIVE
@@ -190,9 +235,7 @@
 #endif
 
 #if \
-    defined(SIMDE_X86_AVX_NATIVE) || \
-    defined(SIMDE_X86_GFNI_NATIVE) || \
-    defined(SIMDE_X86_SVML_NATIVE)
+    defined(SIMDE_X86_AVX_NATIVE) || defined(SIMDE_X86_GFNI_NATIVE)
   #include <immintrin.h>
 #elif defined(SIMDE_X86_SSE4_2_NATIVE)
   #include <nmmintrin.h>
@@ -210,6 +253,14 @@
   #include <mmintrin.h>
 #endif
 
+#if defined(SIMDE_X86_XOP_NATIVE)
+  #if defined(_MSC_VER)
+    #include <intrin.h>
+  #else
+    #include <x86intrin.h>
+  #endif
+#endif
+
 #if defined(HEDLEY_MSVC_VERSION)
   #pragma warning(pop)
 #endif
@@ -224,7 +275,7 @@
 #endif
 
 #if !defined(SIMDE_ARM_NEON_A32V8_NATIVE) && !defined(SIMDE_ARM_NEON_A32V8_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
-  #if defined(SIMDE_ARCH_ARM_NEON) && SIMDE_ARCH_ARM_CHECK(80)
+  #if defined(SIMDE_ARCH_ARM_NEON) && SIMDE_ARCH_ARM_CHECK(80) && (__ARM_NEON_FP & 0x02)
     #define SIMDE_ARM_NEON_A32V8_NATIVE
   #endif
 #endif
@@ -254,12 +305,6 @@
   #endif
 #endif
 #if defined(SIMDE_WASM_SIMD128_NATIVE)
-  #if !defined(__wasm_unimplemented_simd128__)
-    HEDLEY_DIAGNOSTIC_PUSH
-    SIMDE_DIAGNOSTIC_DISABLE_RESERVED_ID_MACRO_
-    #define __wasm_unimplemented_simd128__
-    HEDLEY_DIAGNOSTIC_POP
-  #endif
   #include <wasm_simd128.h>
 #endif
 
@@ -305,7 +350,25 @@
   #endif
 #endif
 
-#if defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
+#if !defined(SIMDE_ZARCH_ZVECTOR_15_NATIVE) && !defined(SIMDE_ZARCH_ZVECTOR_15_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
+  #if SIMDE_ARCH_ZARCH_CHECK(13) && defined(SIMDE_ARCH_ZARCH_ZVECTOR)
+    #define SIMDE_ZARCH_ZVECTOR_15_NATIVE
+  #endif
+#endif
+
+#if !defined(SIMDE_ZARCH_ZVECTOR_14_NATIVE) && !defined(SIMDE_ZARCH_ZVECTOR_14_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
+  #if SIMDE_ARCH_ZARCH_CHECK(12) && defined(SIMDE_ARCH_ZARCH_ZVECTOR)
+    #define SIMDE_ZARCH_ZVECTOR_14_NATIVE
+  #endif
+#endif
+
+#if !defined(SIMDE_ZARCH_ZVECTOR_13_NATIVE) && !defined(SIMDE_ZARCH_ZVECTOR_13_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
+  #if SIMDE_ARCH_ZARCH_CHECK(11) && defined(SIMDE_ARCH_ZARCH_ZVECTOR)
+    #define SIMDE_ZARCH_ZVECTOR_13_NATIVE
+  #endif
+#endif
+
+#if defined(SIMDE_POWER_ALTIVEC_P6_NATIVE) || defined(SIMDE_ZARCH_ZVECTOR_13_NATIVE)
   /* AltiVec conflicts with lots of stuff.  The bool keyword conflicts
    * with the bool keyword in C++ and the bool macro in C99+ (defined
    * in stdbool.h).  The vector keyword conflicts with std::vector in
@@ -323,19 +386,23 @@
     #undef bool
   #endif
 
-  #include <altivec.h>
+  #if defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
+    #include <altivec.h>
 
-  #if !defined(SIMDE_POWER_ALTIVEC_NO_UNDEF)
-    #if defined(vector)
-      #undef vector
-    #endif
-    #if defined(pixel)
-      #undef pixel
-    #endif
-    #if defined(bool)
-      #undef bool
-    #endif
-  #endif /* !defined(SIMDE_POWER_ALTIVEC_NO_UNDEF) */
+    #if !defined(SIMDE_POWER_ALTIVEC_NO_UNDEF)
+      #if defined(vector)
+        #undef vector
+      #endif
+      #if defined(pixel)
+        #undef pixel
+      #endif
+      #if defined(bool)
+        #undef bool
+      #endif
+    #endif /* !defined(SIMDE_POWER_ALTIVEC_NO_UNDEF) */
+  #elif defined(SIMDE_ZARCH_ZVECTOR_13_NATIVE)
+    #include <vecintrin.h>
+  #endif
 
   /* Use these intsead of vector/pixel/bool in SIMDe. */
   #define SIMDE_POWER_ALTIVEC_VECTOR(T) __vector T
@@ -346,6 +413,15 @@
   #if !defined(__cplusplus) && defined(__bool_true_false_are_defined) && !defined(SIMDE_POWER_ALTIVEC_NO_UNDEF)
     #define bool _Bool
   #endif
+#endif
+
+#if !defined(SIMDE_MIPS_LOONGSON_MMI_NATIVE) && !defined(SIMDE_MIPS_LOONGSON_MMI_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
+  #if defined(SIMDE_ARCH_MIPS_LOONGSON_MMI)
+    #define SIMDE_MIPS_LOONGSON_MMI_NATIVE  1
+  #endif
+#endif
+#if defined(SIMDE_MIPS_LOONGSON_MMI_NATIVE)
+  #include <loongson-mmiintrin.h>
 #endif
 
 /* This is used to determine whether or not to fall back on a vector
@@ -371,8 +447,8 @@
   #endif
 #endif
 
-#define SIMDE_NATURAL_VECTOR_SIZE_LE(x) (SIMDE_NATURAL_VECTOR_SIZE <= (x))
-#define SIMDE_NATURAL_VECTOR_SIZE_GE(x) (SIMDE_NATURAL_VECTOR_SIZE >= (x))
+#define SIMDE_NATURAL_VECTOR_SIZE_LE(x) ((SIMDE_NATURAL_VECTOR_SIZE > 0) && (SIMDE_NATURAL_VECTOR_SIZE <= (x)))
+#define SIMDE_NATURAL_VECTOR_SIZE_GE(x) ((SIMDE_NATURAL_VECTOR_SIZE > 0) && (SIMDE_NATURAL_VECTOR_SIZE >= (x)))
 
 /* Native aliases */
 #if defined(SIMDE_ENABLE_NATIVE_ALIASES)
@@ -424,6 +500,15 @@
   #if !defined(SIMDE_X86_GFNI_NATIVE)
     #define SIMDE_X86_GFNI_ENABLE_NATIVE_ALIASES
   #endif
+  #if !defined(SIMDE_X86_PCLMUL_NATIVE)
+    #define SIMDE_X86_PCLMUL_ENABLE_NATIVE_ALIASES
+  #endif
+  #if !defined(SIMDE_X86_VPCLMULQDQ_NATIVE)
+    #define SIMDE_X86_VPCLMULQDQ_ENABLE_NATIVE_ALIASES
+  #endif
+  #if !defined(SIMDE_X86_F16C_NATIVE)
+    #define SIMDE_X86_F16C_ENABLE_NATIVE_ALIASES
+  #endif
 
   #if !defined(SIMDE_ARM_NEON_A32V7_NATIVE)
     #define SIMDE_ARM_NEON_A32V7_ENABLE_NATIVE_ALIASES
@@ -433,6 +518,10 @@
   #endif
   #if !defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     #define SIMDE_ARM_NEON_A64V8_ENABLE_NATIVE_ALIASES
+  #endif
+
+  #if !defined(SIMDE_WASM_SIMD128_NATIVE)
+    #define SIMDE_WASM_SIMD128_ENABLE_NATIVE_ALIASES
   #endif
 #endif
 
