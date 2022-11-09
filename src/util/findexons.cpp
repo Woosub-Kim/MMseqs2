@@ -347,8 +347,14 @@ private:
     const int MAX_ALIGNMENTS_OVERLAP_LENGTH = 90;
 
     IndexReader * tDbr;
+<<<<<<< HEAD
     IndexReader * qDbr;
     unsigned int queryKey;
+=======
+//    IndexReader * qDbr;
+    // Do I need?
+//    unsigned int queryKey;
+>>>>>>> c6997cea3e1ed78f9d7b96fd98b5cca175fa81a6
     std::vector<DpMatrixRow> dpMatrixRow;
     typedef std::pair<char, int> cigarTuple;
     typedef std::pair<char, char> aminoAcidPair;

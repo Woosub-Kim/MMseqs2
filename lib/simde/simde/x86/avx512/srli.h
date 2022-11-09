@@ -39,7 +39,7 @@ SIMDE_BEGIN_DECLS_
 
 SIMDE_FUNCTION_ATTRIBUTES
 simde__m512i
-simde_mm512_srli_epi16 (simde__m512i a, const int imm8)
+simde_mm512_srli_epi16 (simde__m512i a, const unsigned int imm8)
     SIMDE_REQUIRE_CONSTANT_RANGE(imm8, 0, 255) {
   #if defined(SIMDE_X86_AVX512BW_NATIVE) && (defined(HEDLEY_GCC_VERSION) && ((__GNUC__ == 5 && __GNUC_MINOR__ == 5) || (__GNUC__ == 6 && __GNUC_MINOR__ >= 4)))
     simde__m512i r;
@@ -58,7 +58,7 @@ simde_mm512_srli_epi16 (simde__m512i a, const int imm8)
       return simde_mm512_setzero_si512();
 
     #if defined(SIMDE_VECTOR_SUBSCRIPT_SCALAR)
-      r_.u16 = a_.u16 >> HEDLEY_STATIC_CAST(int16_t, imm8);
+      r_.u16 = a_.u16 >> SIMDE_CAST_VECTOR_SHIFT_COUNT(16, imm8);
     #else
       SIMDE_VECTORIZE
       for (size_t i = 0 ; i < (sizeof(r_.u16) / sizeof(r_.u16[0])) ; i++) {

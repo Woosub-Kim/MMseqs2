@@ -84,8 +84,10 @@ private:
     int querySeqType;
     int targetSeqType;
     bool compBiasCorrection;
+    float compBiasCorrectionScale;
 
     int altAlignment;
+    int alignmentOutputMode;
 
     const unsigned int maxAccept;
     const unsigned int maxReject;
@@ -96,6 +98,10 @@ private:
     int gapOpen;
     // costs to extend a gap
     int gapExtend;
+
+    // correction score weight
+    float correlationScoreWeight;
+
     // score difference to break alignment
     int zdrop;
 

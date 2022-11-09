@@ -8,6 +8,9 @@
 #include "Timer.h"
 #include "Parameters.h"
 
+#define SIMDE_ENABLE_NATIVE_ALIASES
+#include <simde/simde-common.h>
+
 #include <cstdlib>
 #include <cstdio>
 #include <sstream>
@@ -142,8 +145,8 @@ void DBWriter::open(size_t bufferSize) {
         }
 
         dataFilesBuffer[i] = new(std::nothrow) char[bufferSize];
-        incrementMemory(bufferSize);
         Util::checkAllocation(dataFilesBuffer[i], "Cannot allocate buffer for DBWriter");
+        incrementMemory(bufferSize);
         this->bufferSize = bufferSize;
 
         // set buffer to 64
@@ -195,6 +198,9 @@ void DBWriter::writeDbtypeFile(const char* path, int dbtype, bool isCompressed) 
     std::string name = std::string(path) + ".dbtype";
     FILE* file = FileUtil::openAndDelete(name.c_str(), "wb");
     dbtype = isCompressed ? dbtype | (1 << 31) : dbtype & ~(1 << 31);
+#if SIMDE_ENDIAN_ORDER == SIMDE_ENDIAN_BIG
+    dbtype = __builtin_bswap32(dbtype);
+#endif
     size_t written = fwrite(&dbtype, sizeof(int), 1, file);
     if (written != 1) {
         Debug(Debug::ERROR) << "Can not write to data file " << name << "\n";
@@ -575,7 +581,7 @@ void DBWriter::mergeResults(const char *outFileName, const char *outFileNameInde
 
         // merge index
         mergeIndex(indexFileNames, dataFilenames.size(), mergedSizes);
-    } else {
+    } else if (dataFilenames.size() == 1) {
         std::vector<std::string>& filenames = dataFilenames[0];
         if (filenames.size() == 1) {
             // In single thread dbreader mode it will create a .0
@@ -584,12 +590,25 @@ void DBWriter::mergeResults(const char *outFileName, const char *outFileNameInde
         } else {
             DBReader<unsigned int>::moveDatafiles(filenames, outFileName);
         }
-    }
-    if (indexNeedsToBeSorted) {
-        DBWriter::sortIndex(indexFileNames[0], outFileNameIndex, lexicographicOrder);
-        FileUtil::remove(indexFileNames[0]);
     } else {
-        FileUtil::move(indexFileNames[0], outFileNameIndex);
+        FILE *outFh = FileUtil::openAndDelete(outFileName, "w");
+        if (fclose(outFh) != 0) {
+            Debug(Debug::ERROR) << "Cannot close data file " << outFileName << "\n";
+            EXIT(EXIT_FAILURE);
+        }
+        outFh = FileUtil::openAndDelete(outFileNameIndex, "w");
+        if (fclose(outFh) != 0) {
+            Debug(Debug::ERROR) << "Cannot close index file " << outFileNameIndex << "\n";
+            EXIT(EXIT_FAILURE);
+        }
+    }
+    if (dataFilenames.size() > 0) {
+        if (indexNeedsToBeSorted) {
+            DBWriter::sortIndex(indexFileNames[0], outFileNameIndex, lexicographicOrder);
+            FileUtil::remove(indexFileNames[0]);
+        } else {
+            FileUtil::move(indexFileNames[0], outFileNameIndex);
+        }
     }
     Debug(Debug::INFO) << "Time for merging to " << FileUtil::baseName(outFileName) << ": " << timer.lap() << "\n";
 }
@@ -715,5 +734,6 @@ void DBWriter::createRenumberedDB(const std::string& dataFile, const std::string
             EXIT(EXIT_FAILURE);
         }
         lookupReader->close();
+        delete lookupReader;
     }
 }

@@ -10,6 +10,7 @@
 #include "translated_search.sh.h"
 #include "blastp.sh.h"
 #include "blastn.sh.h"
+#include "iterativepp.sh.h"
 #include "Parameters.h"
 
 #include <iomanip>
@@ -22,7 +23,6 @@ void setSearchDefaults(Parameters *p) {
     p->alignmentMode = Parameters::ALIGNMENT_MODE_SCORE_COV;
     p->sensitivity = 5.7;
     p->evalThr = 0.001;
-    //p->orfLongest = true;
     p->orfStartMode = 1;
     p->orfMinLength = 30;
     p->orfMaxLength = 32734;
@@ -32,11 +32,11 @@ void setSearchDefaults(Parameters *p) {
 
 int computeSearchMode(int queryDbType, int targetDbType, int targetSrcDbType, int searchType) {
     // reject unvalid search
-    if (Parameters::isEqualDbtype(queryDbType, Parameters::DBTYPE_HMM_PROFILE) &&
-        Parameters::isEqualDbtype(targetDbType,Parameters::DBTYPE_HMM_PROFILE)) {
-        Debug(Debug::ERROR) << "Profile-Profile searches are not supported.\n";
-        EXIT(EXIT_FAILURE);
-    }
+//    if (Parameters::isEqualDbtype(queryDbType, Parameters::DBTYPE_HMM_PROFILE) &&
+//        Parameters::isEqualDbtype(targetDbType,Parameters::DBTYPE_HMM_PROFILE)) {
+//        Debug(Debug::ERROR) << "Profile-Profile searches are not supported.\n";
+//        EXIT(EXIT_FAILURE);
+//    }
     // index was used
     if(targetSrcDbType == -1) {
         if(Parameters::isEqualDbtype(queryDbType, Parameters::DBTYPE_NUCLEOTIDES) &&
@@ -72,7 +72,7 @@ int computeSearchMode(int queryDbType, int targetDbType, int targetSrcDbType, in
             return Parameters::SEARCH_MODE_FLAG_QUERY_PROFILE | Parameters::SEARCH_MODE_FLAG_TARGET_AMINOACID;
         }
 
-        // protein/profile
+        // protein/profile -> iterativepp
         if (Parameters::isEqualDbtype(queryDbType, Parameters::DBTYPE_AMINO_ACIDS) &&
             Parameters::isEqualDbtype(targetDbType, Parameters::DBTYPE_HMM_PROFILE)){
             return Parameters::SEARCH_MODE_FLAG_QUERY_AMINOACID | Parameters::SEARCH_MODE_FLAG_TARGET_PROFILE;
@@ -248,8 +248,12 @@ int search(int argc, const char **argv, const Command& command) {
     }
     // FIXME: use larger default k-mer size in target-profile case if memory is available
     // overwrite default kmerSize for target-profile searches and parse parameters again
-    if (par.sliceSearch == false && (searchMode & Parameters::SEARCH_MODE_FLAG_TARGET_PROFILE) && par.PARAM_K.wasSet == false) {
-        par.kmerSize = 5;
+    if (par.exhaustiveSearch == false && (searchMode & Parameters::SEARCH_MODE_FLAG_TARGET_PROFILE) && par.PARAM_K.wasSet == false) {
+        if ((searchMode & Parameters::SEARCH_MODE_FLAG_QUERY_AMINOACID) && par.PARAM_NUM_ITERATIONS.wasSet) {
+            par.kmerSize = 0;
+        } else {
+            par.kmerSize = 5;
+        }
     }
 
     const bool isUngappedMode = par.alignmentMode == Parameters::ALIGNMENT_MODE_UNGAPPED;
@@ -267,11 +271,13 @@ int search(int argc, const char **argv, const Command& command) {
 
     // validate and set parameters for iterative search
     if (par.numIterations > 1) {
-        if (searchMode & Parameters::SEARCH_MODE_FLAG_TARGET_PROFILE) {
-            par.printUsageMessage(command, MMseqsParameter::COMMAND_ALIGN | MMseqsParameter::COMMAND_PREFILTER);
-            Debug(Debug::ERROR) << "Iterative target-profile searches are not supported.\n";
-            EXIT(EXIT_FAILURE);
-        }
+        // commmented out to test iterativepp workflow
+        // TODO: check if there exists an aln db underneath the targetdb -> used specifically in iterativepp workflow
+//        if (searchMode & Parameters::SEARCH_MODE_FLAG_TARGET_PROFILE) {
+//            par.printUsageMessage(command, MMseqsParameter::COMMAND_ALIGN | MMseqsParameter::COMMAND_PREFILTER);
+//            Debug(Debug::ERROR) << "Iterative target-profile searches are not supported.\n";
+//            EXIT(EXIT_FAILURE);
+//        }
 
         par.addBacktrace = true;
         if (searchMode & Parameters::SEARCH_MODE_FLAG_QUERY_PROFILE) {
@@ -315,7 +321,7 @@ int search(int argc, const char **argv, const Command& command) {
     cmd.addVariable("RUNNER", par.runner.c_str());
 //    cmd.addVariable("ALIGNMENT_DB_EXT", Parameters::isEqualDbtype(targetDbType, Parameters::DBTYPE_PROFILE_STATE_SEQ) ? ".255" : "");
     par.filenames[1] = targetDB;
-    if (par.sliceSearch == true) {
+    if (par.exhaustiveSearch == true) {
         // By default (0), diskSpaceLimit (in bytes) will be set in the workflow to use as much as possible
         cmd.addVariable("AVAIL_DISK", SSTR(static_cast<size_t>(par.diskSpaceLimit)).c_str());
 
@@ -327,25 +333,72 @@ int search(int argc, const char **argv, const Command& command) {
         int originalCovMode = par.covMode;
         par.covMode = Util::swapCoverageMode(par.covMode);
         size_t maxResListLen = par.maxResListLen;
-        par.maxResListLen = INT_MAX;
+        par.maxResListLen = std::max((size_t)300, queryDbSize);
         cmd.addVariable("PREFILTER_PAR", par.createParameterString(par.prefilter).c_str());
         par.maxResListLen = maxResListLen;
         double originalEvalThr = par.evalThr;
         par.evalThr = std::numeric_limits<double>::max();
-        cmd.addVariable("SWAP_PAR", par.createParameterString(par.swapresult).c_str());
+        cmd.addVariable("SWAPRES_PAR", par.createParameterString(par.swapresult).c_str());
         par.evalThr = originalEvalThr;
+        cmd.addVariable("FILTER_PAR", par.createParameterString(par.filterresult).c_str());
+        cmd.addVariable("FILTER_RESULT", par.exhaustiveFilterMsa == 1 ? "1" : "0");
         if (isUngappedMode) {
             par.rescoreMode = Parameters::RESCORE_MODE_ALIGNMENT;
             cmd.addVariable("ALIGNMENT_PAR", par.createParameterString(par.rescorediagonal).c_str());
             par.rescoreMode = originalRescoreMode;
         } else {
             cmd.addVariable("ALIGNMENT_PAR", par.createParameterString(par.align).c_str());
+            par.alignmentOutputMode = Parameters::ALIGNMENT_OUTPUT_CLUSTER;
+            cmd.addVariable("ALIGNMENT_IT_PAR", par.createParameterString(par.align).c_str());
         }
-        cmd.addVariable("SORTRESULT_PAR", par.createParameterString(par.sortresult).c_str());
+
         par.covMode = originalCovMode;
 
         program = tmpDir + "/searchslicedtargetprofile.sh";
         FileUtil::writeFile(program, searchslicedtargetprofile_sh, searchslicedtargetprofile_sh_len);
+    } else if (((searchMode & Parameters::SEARCH_MODE_FLAG_TARGET_PROFILE) && (searchMode & Parameters::SEARCH_MODE_FLAG_QUERY_AMINOACID))
+        && par.PARAM_NUM_ITERATIONS.wasSet){
+        par.exhaustiveSearch = true;
+        par.addBacktrace = true;
+        int originalNumIterations = par.numIterations;
+        par.numIterations = 1;
+        int originalEval = par.evalThr;
+        int originalPcmode = par.pcmode;
+        par.pcmode = 0;
+        //does expandaln's gap-open cost affect the score? -> NO!
+        cmd.addVariable("EXPANDALN_PAR", par.createParameterString(par.expandaln).c_str());
+        if (originalNumIterations == 1) {
+            cmd.addVariable("SEARCH_PAR", par.createParameterString(par.searchworkflow).c_str());
+        } else {
+            par.evalThr = (par.evalThr < par.evalProfile) ? par.evalThr : par.evalProfile;
+            cmd.addVariable("SEARCH_PAR", par.createParameterString(par.searchworkflow).c_str());
+        }
+        par.pcmode = originalPcmode;
+        cmd.addVariable("EXPANDPROFILE_PAR", par.createParameterString(par.expand2profile).c_str());
+        par.numIterations = originalNumIterations;
+        cmd.addVariable("NUM_IT", SSTR(par.numIterations).c_str());
+        cmd.addVariable("MERGE_PAR", par.createParameterString(par.mergedbs).c_str());
+        cmd.addVariable("SUBTRACT_PAR", par.createParameterString(par.subtractdbs).c_str());
+        cmd.addVariable("VERBOSITY_PAR", par.createParameterString(par.onlyverbosity).c_str());
+        cmd.addVariable("CONSENSUS_PAR", par.createParameterString(par.profile2seq).c_str());
+        for (int i = 1; i < par.numIterations; i++) {
+            if (i == (par.numIterations - 1)) {
+                par.evalThr = originalEval;
+            }
+            cmd.addVariable(std::string("PREFILTER_PAR_" + SSTR(i)).c_str(),
+                            par.createParameterString(par.prefilter).c_str());
+            if (isUngappedMode) {
+                par.rescoreMode = Parameters::RESCORE_MODE_ALIGNMENT;
+                cmd.addVariable(std::string("ALIGNMENT_PAR_" + SSTR(i)).c_str(),
+                                par.createParameterString(par.rescorediagonal).c_str());
+                par.rescoreMode = originalRescoreMode;
+            } else {
+                cmd.addVariable(std::string("ALIGNMENT_PAR_" + SSTR(i)).c_str(),
+                                par.createParameterString(par.align).c_str());
+            }
+        }
+        FileUtil::writeFile(tmpDir + "/iterativepp.sh", iterativepp_sh, iterativepp_sh_len);
+        program = std::string(tmpDir + "/iterativepp.sh");
     } else if (searchMode & Parameters::SEARCH_MODE_FLAG_TARGET_PROFILE) {
         cmd.addVariable("PREFILTER_PAR", par.createParameterString(par.prefilter).c_str());
         // we need to align all hits in case of target Profile hits
@@ -397,10 +450,8 @@ int search(int argc, const char **argv, const Command& command) {
                 cmd.addVariable(std::string("ALIGNMENT_PAR_" + SSTR(i)).c_str(),
                                 par.createParameterString(par.align).c_str());
             }
-            par.pca = 0.0;
             cmd.addVariable(std::string("PROFILE_PAR_" + SSTR(i)).c_str(),
                             par.createParameterString(par.result2profile).c_str());
-            par.pca = 1.0;
         }
 
         FileUtil::writeFile(tmpDir + "/blastpgp.sh", blastpgp_sh, blastpgp_sh_len);
@@ -453,7 +504,6 @@ int search(int argc, const char **argv, const Command& command) {
         FileUtil::writeFile(tmpDir + "/translated_search.sh", translated_search_sh, translated_search_sh_len);
         cmd.addVariable("QUERY_NUCL", (searchMode & Parameters::SEARCH_MODE_FLAG_QUERY_TRANSLATED) ? "TRUE" : NULL);
         cmd.addVariable("TARGET_NUCL", (searchMode & Parameters::SEARCH_MODE_FLAG_TARGET_TRANSLATED)  ? "TRUE" : NULL);
-        cmd.addVariable("ORF_FILTER", par.orfFilter ? "TRUE" : NULL);
         cmd.addVariable("THREAD_COMP_PAR", par.createParameterString(par.threadsandcompression).c_str());
         par.subDbMode = 1;
         cmd.addVariable("CREATESUBDB_PAR", par.createParameterString(par.createsubdb).c_str());

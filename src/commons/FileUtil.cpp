@@ -2,6 +2,9 @@
 #include "Util.h"
 #include "Debug.h"
 
+#define SIMDE_ENABLE_NATIVE_ALIASES
+#include <simde/simde-common.h>
+
 #include <cstddef>
 #include <cstring>
 #include <climits>
@@ -9,7 +12,6 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <dirent.h>
 
 #include <sys/stat.h>
 #include <sys/statvfs.h>
@@ -180,12 +182,6 @@ void FileUtil::symlinkAlias(const std::string &file, const std::string &alias) {
     std::string base = baseName(p);
     free(p);
 
-    DIR *dir = opendir(path.c_str());
-    if (dir == NULL) {
-        Debug(Debug::ERROR) << "Error opening directory " << path << "!\n";
-        EXIT(EXIT_FAILURE);
-    }
-
     std::string pathToAlias = (path + "/" + alias);
     if (symlinkExists(pathToAlias) == true){
         FileUtil::remove(pathToAlias.c_str());
@@ -206,16 +202,16 @@ void FileUtil::symlinkAlias(const std::string &file, const std::string &alias) {
         Debug(Debug::ERROR) << "Could not change working directory to " << oldWd << "\n";
         EXIT(EXIT_FAILURE);
     }
-    if (closedir(dir) != 0) {
-        Debug(Debug::ERROR) << "Error closing directory " << path << "!\n";
-        EXIT(EXIT_FAILURE);
-    }
 }
 
 std::string FileUtil::getCurrentWorkingDirectory() {
     // CWD can be larger than PATH_MAX and allocating enough memory is somewhat tricky
     char* wd = NULL;
+#ifdef PATH_MAX
     size_t bufferSize = PATH_MAX;
+#else
+    size_t bufferSize = 1024;
+#endif
     do {
         if (wd != NULL) {
             free(wd);
@@ -307,6 +303,10 @@ void FileUtil::copyFile(const char *src, const char *dst) {
     }
     close(source);
     close(dest);
+}
+
+void FileUtil::copyFile(const std::string& src, const std::string& dst) {
+    copyFile(src.c_str(), dst.c_str());
 }
 
 FILE * FileUtil::openAndDelete(const char *fileName, const char *mode) {
@@ -414,6 +414,9 @@ int FileUtil::parseDbType(const char *name) {
         Debug(Debug::ERROR) << "Cannot close file " << dbTypeFile << "\n";
         EXIT(EXIT_FAILURE);
     }
+#if SIMDE_ENDIAN_ORDER == SIMDE_ENDIAN_BIG
+    dbtype = __builtin_bswap32(dbtype);
+#endif
     return dbtype;
 }
 
@@ -454,4 +457,22 @@ void FileUtil::fixRlimitNoFile() {
             Debug(Debug::WARNING) << "Could not increase maximum number of open files (setrlimit " << errno << "). Use ulimit manually\n";
         }
     }
+}
+
+std::string FileUtil::sanitizeFilename(std::string name){
+    static const std::vector<std::pair<char, char>> symbolTable =
+            {{'\\', '@'},
+             {'/', '@'},
+             {':', '@'},
+             {'*', '@'},
+             {'?', '@'},
+             {'<', '@'},
+             {'>', '@'},
+             {'|', '!'}};
+
+    std::vector<std::pair<char, char>>::const_iterator it;
+    for (it = symbolTable.begin(); it != symbolTable.end(); ++it) {
+        std::replace(name.begin(), name.end(), it->first, it->second);
+    }
+    return name;
 }
