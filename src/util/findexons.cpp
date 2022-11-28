@@ -22,9 +22,9 @@ struct DpMatrixRow {
 
 struct ExonCandidates{
     ExonCandidates(){}
-    ExonCandidates(long score, std::vector<Matcher::result_t> candidates) : score(score), candidates(candidates){}
+    ExonCandidates(long score, std::vector<Matcher::result_t> alignments) : score(score), alignments(alignments){}
     long score;
-    std::vector<Matcher::result_t> candidates;
+    std::vector<Matcher::result_t> alignments;
 };
 
 struct donorAcceptorSitesCandidate{
@@ -82,8 +82,8 @@ public:
     }
 
     //Dynamic programming
-    void findOptimalExons(
-            std::vector<Matcher::result_t> & optimalExonSolution,
+    void getOptimalAlns(
+            std::vector<Matcher::result_t> & optimalAlns,
             std::vector<Matcher::result_t> & alignments,
             unsigned int thread_idx,
             long & orfScore
@@ -91,26 +91,26 @@ public:
         std::sort(alignments.begin(), alignments.end(), Matcher::compareByDbkeyAndStrand);
         std::vector<ExonCandidates> scoresAndAlignmentVectors = createPotentialExonCombinations(alignments);
         for(size_t candidateIdx = 0; candidateIdx < scoresAndAlignmentVectors.size(); candidateIdx++){
-            ExonCandidates & scoreAndAlignmentVector = scoresAndAlignmentVectors[candidateIdx];
+            ExonCandidates & scoreAndAlns = scoresAndAlignmentVectors[candidateIdx];
             dpMatrixRow.clear();
-            for (size_t id = 0; id < scoreAndAlignmentVector.candidates.size(); id++) {
-                long score = queryLength(scoreAndAlignmentVector.candidates[id]) * scoreAndAlignmentVector.candidates[id].seqId;
+            for (size_t id = 0; id < scoreAndAlns.alignments.size(); id++) {
+                long score = queryLength(scoreAndAlns.alignments[id]) * scoreAndAlns.alignments[id].seqId;
                 dpMatrixRow.emplace_back(DpMatrixRow(id,score));
             }
             long bestPathScore = INT_MIN;
             size_t currId;
-            for (size_t currExon = 0; currExon < scoreAndAlignmentVector.candidates.size(); currExon++) {
-                long score = queryLength(scoreAndAlignmentVector.candidates[currExon]) * scoreAndAlignmentVector.candidates[currExon].seqId;
-                bool strand = scoreAndAlignmentVector.candidates[currExon].dbEndPos > scoreAndAlignmentVector.candidates[currExon].dbStartPos;
+            for (size_t currExon = 0; currExon < scoreAndAlns.alignments.size(); currExon++) {
+                long score = queryLength(scoreAndAlns.alignments[currExon]) * scoreAndAlns.alignments[currExon].seqId; // dpMatrixRow[currExon].pathScore;
+                bool strand = scoreAndAlns.alignments[currExon].dbEndPos > scoreAndAlns.alignments[currExon].dbStartPos;
                 for (size_t prevExon = 0; prevExon < currExon; prevExon++) {
-                    int tIntronLength = strand ? scoreAndAlignmentVector.candidates[currExon].dbStartPos - scoreAndAlignmentVector.candidates[prevExon].dbEndPos + 1 : scoreAndAlignmentVector.candidates[prevExon].dbEndPos - scoreAndAlignmentVector.candidates[currExon].dbStartPos + 1 ;
-                    int qIntronLength = scoreAndAlignmentVector.candidates[currExon].qStartPos - scoreAndAlignmentVector.candidates[prevExon].qEndPos + 1;
+                    int tIntronLength = strand ? scoreAndAlns.alignments[currExon].dbStartPos - scoreAndAlns.alignments[prevExon].dbEndPos + 1 : scoreAndAlns.alignments[prevExon].dbEndPos - scoreAndAlns.alignments[currExon].dbStartPos + 1 ;
+                    int qIntronLength = scoreAndAlns.alignments[currExon].qStartPos - scoreAndAlns.alignments[prevExon].qEndPos + 1;
                     bool isNotTooLongIntron = (tIntronLength < MAX_INTRON_LENGTH);
                     bool isNotTooShortIntron = tIntronLength > MIN_INTRON_LENGTH;
                     bool isNotOverlapped = qIntronLength > - MAX_ALIGNMENTS_OVERLAP_LENGTH;
-                    bool prevStrand = scoreAndAlignmentVector.candidates[prevExon].dbEndPos > scoreAndAlignmentVector.candidates[prevExon].dbStartPos;
+                    bool prevStrand = scoreAndAlns.alignments[prevExon].dbEndPos > scoreAndAlns.alignments[prevExon].dbStartPos;
                     bool isTheSameStrand = strand==prevStrand;
-                    bool isTheSameOrf = scoreAndAlignmentVector.candidates[currExon].queryOrfStartPos == scoreAndAlignmentVector.candidates[prevExon].queryOrfStartPos && scoreAndAlignmentVector.candidates[currExon].queryOrfEndPos == scoreAndAlignmentVector.candidates[prevExon].queryOrfEndPos;
+                    bool isTheSameOrf = scoreAndAlns.alignments[currExon].queryOrfStartPos == scoreAndAlns.alignments[prevExon].queryOrfStartPos && scoreAndAlns.alignments[currExon].queryOrfEndPos == scoreAndAlns.alignments[prevExon].queryOrfEndPos;
                     if (isTheSameStrand && isTheSameOrf && isNotTooLongIntron && isNotTooShortIntron  && isNotOverlapped)  { //&& sameOrf
                         long bestScorePrev = dpMatrixRow[prevExon].pathScore;
                         long currScoreWithPrev = bestScorePrev + score;
@@ -138,70 +138,104 @@ public:
             }
             if(isBestScore&&dpMatrixRow.size()>0){
                 orfScore = bestPathScore;
-                optimalExonSolution.clear();
+                optimalAlns.clear();
                 while (dpMatrixRow[currId].prevPotentialId != currId) {
-                    optimalExonSolution.emplace_back(scoreAndAlignmentVector.candidates[currId]);
+                    optimalAlns.emplace_back(scoreAndAlns.alignments[currId]);
                     currId = dpMatrixRow[currId].prevPotentialId;
                 }
-                optimalExonSolution.emplace_back(scoreAndAlignmentVector.candidates[currId]);
-                std::sort(optimalExonSolution.begin(), optimalExonSolution.end(), Matcher::compareHitsByPosWithStrand); // Matcher::compareHitsByPosWithStrand
-                scoreAndAlignmentVector.score = bestPathScore;
+                optimalAlns.emplace_back(scoreAndAlns.alignments[currId]);
+                std::sort(optimalAlns.begin(), optimalAlns.end(), Matcher::compareHitsByPosWithStrand); // Matcher::compareHitsByPosWithStrand
+                scoreAndAlns.score = bestPathScore;
                 dpMatrixRow.clear();
-                // 2nd aligner
-                std::string targetSeq = std::string(getTargetSequence(scoreAndAlignmentVector.candidates[0].dbKey, thread_idx));
-                std::string querySeq = std::string(getQuerySequence(queryKey, thread_idx));
-                int s1 = getBlosum62Score(aminoAcidPair('M', 'M'));
-                bool strand = optimalExonSolution[0].dbEndPos > optimalExonSolution[0].dbStartPos;
-                int prevQueryEnd = optimalExonSolution[0].queryOrfStartPos -1;
-                int finalQueryEnd = optimalExonSolution[0].queryOrfEndPos;
-                int tScope1 = optimalExonSolution[0].qStartPos - (optimalExonSolution[0].queryOrfStartPos-1) + BONUS_SCOPE;
-                int tScope2 = optimalExonSolution[0].queryOrfEndPos - optimalExonSolution[0].qEndPos + BONUS_SCOPE;
-                int prevTargetEnd = optimalExonSolution[0].dbStartPos + (strand ? -tScope1 : +tScope1);
-                int finalTargetEnd = optimalExonSolution[optimalExonSolution.size() - 1].dbEndPos + (strand ? +tScope2 : -tScope2);
-                std::vector<std::string> queryMissingAlnsScopeSeqs;
-                std::vector<std::string> targetMissingAlnsScopeSeqs;
-                for (size_t i=0; i<optimalExonSolution.size();i++){
-                    int currQueryStart = optimalExonSolution[i].qStartPos;
-                    int currTargetStart = optimalExonSolution[i].dbStartPos;
-                    if (currQueryStart - prevQueryEnd > 90) {
-                        int qStart = prevQueryEnd + 1;
-                        int qEnd = currQueryStart - 1;
-                        int tStart = strand ? prevTargetEnd + 1 : prevTargetEnd - 1;
-                        int tEnd = strand ? currTargetStart - 1 : currTargetStart + 1;
-                        std::string querySubSeq = getSubSequence(querySeq, qStart, qEnd + 1);
-                        std::string targetSubSeq = getSubSequence(targetSeq, tStart, strand ? tEnd + 1 : tEnd - 1);
-                        std::vector<Matcher::result_t> foundMissingAlnCandidates = findMissingAlignments(
-                                querySubSeq, getOrfs(targetSubSeq), optimalExonSolution[0].dbKey,
-                                qStart, tStart,
-                                optimalExonSolution[0].queryOrfStartPos, optimalExonSolution[0].queryOrfEndPos,
-                                tStart, tEnd
-                        );
-                    }
-                    prevQueryEnd = optimalExonSolution[i].qEndPos;
-                    prevTargetEnd = optimalExonSolution[i].dbEndPos;
-                }
-                if (finalQueryEnd - prevQueryEnd > 90){
-                    int qStart = prevQueryEnd+1;
-                    int tStart =strand ? prevTargetEnd+1 : prevTargetEnd-1;
-                    std::string querySubSeq = getSubSequence(querySeq, qStart, finalQueryEnd+1);
-                    std::string targetSubSeq = getSubSequence(targetSeq, tStart, strand? finalTargetEnd+1:finalTargetEnd-1);
-                    std::vector<std::string> qOrfVector = getOrfs(querySubSeq);
-                    std::vector<std::string> dbOrfVector = getOrfs(targetSubSeq);
-
-                    int x = querySubSeq.size()%3;
-                    int y = targetSubSeq.size()%3;
-
-                    int foo = 0;
-                }
-//                std::string str = "ATGCATGCATGCATGC";
-//                std::string seq1 = getSubSequence(str,3,7);
-//                std::string seq2 = getSubSequence(str,7,3);
-//                std::string seq3 = getSubSequence(str,6,2);
-//                std::string seq4 = getSubSequence(str,7,3);
             } //end of if conditional statement
         }//end of for loop statement
     }// end of function
 
+    std::vector<Matcher::result_t> ComplementAlns(std::vector<Matcher::result_t> inputAlns, unsigned int thread_idx){
+        // Find Missing Alns
+        std::vector<Matcher::result_t> outputAlns;
+        unsigned int dbKey = inputAlns[0].dbKey;
+        bool strand = inputAlns[0].dbEndPos > inputAlns[0].dbStartPos;
+        int qPrevEnd = inputAlns[0].queryOrfStartPos - 1;
+        int qFinalEnd = inputAlns[0].queryOrfEndPos;
+        int tScope1 = inputAlns[0].qStartPos - (inputAlns[0].queryOrfStartPos - 1) + 1500; // MAX_INTRON_LENGTH;
+        int tScope2 = inputAlns[0].queryOrfEndPos - inputAlns[0].qEndPos + 1500; // MAX_INTRON_LENGTH;
+        int tPrevEnd = inputAlns[0].dbStartPos + (strand ? -tScope1 : +tScope1);
+        int tFinalEnd = inputAlns[inputAlns.size() - 1].dbEndPos + (strand ? +tScope2 : -tScope2);
+        std::string querySeq = std::string(getQuerySequence(queryKey, thread_idx));
+        std::string targetSeq = std::string(getTargetSequence(dbKey, thread_idx));
+        unsigned int alnNum = inputAlns.size();
+        for (size_t i=0; i < alnNum; i++){
+            int currQueryStart = inputAlns[i].qStartPos;
+            int currTargetStart = inputAlns[i].dbStartPos;
+            if (currQueryStart - qPrevEnd > MIN_INTRON_LENGTH + BONUS_SCOPE) {
+                int qCurrStart = qPrevEnd+1;
+                int qCurrEnd = currQueryStart-1;
+                int tCurrStart = strand ? tPrevEnd+1 : tPrevEnd-1;
+                int tCurrEnd = strand ? currTargetStart - 1 : currTargetStart+1;
+                std::string querySubSeq = getSubSequence(querySeq, qCurrStart, qCurrEnd+1);
+                std::string targetSubSeq = getSubSequence(targetSeq, tCurrStart, strand ? tCurrEnd+1 : tCurrEnd-1);
+                std::vector<Matcher::result_t> foundMissingAlns = findMissingAlignments(
+                        querySubSeq, getOrfs(targetSubSeq), dbKey, qCurrStart, tCurrStart,
+                        inputAlns[0].queryOrfStartPos, inputAlns[0].queryOrfEndPos, tCurrStart, tCurrEnd, inputAlns[0].dbLen
+                );
+                inputAlns.insert(inputAlns.end(), foundMissingAlns.begin(), foundMissingAlns.end());
+            }
+            qPrevEnd = inputAlns[i].qEndPos;
+            tPrevEnd = inputAlns[i].dbEndPos;
+        }
+        if (qFinalEnd - qPrevEnd > MIN_INTRON_LENGTH + BONUS_SCOPE){
+            int qCurrStart = qPrevEnd + 1;
+            int tCurrStart = strand ? tPrevEnd + 1 : tPrevEnd - 1;
+            std::string querySubSeq = getSubSequence(querySeq, qCurrStart, qFinalEnd + 1);
+            std::string targetSubSeq = getSubSequence(targetSeq, tCurrStart, strand ? tFinalEnd + 1 : tFinalEnd - 1);
+            std::vector<Matcher::result_t> foundMissingAlns = findMissingAlignments(
+                    querySubSeq, getOrfs(targetSubSeq), dbKey, qCurrStart, tCurrStart,
+                    inputAlns[0].queryOrfStartPos, inputAlns[0].queryOrfEndPos, tCurrStart, tFinalEnd, inputAlns[0].dbLen
+            );
+            inputAlns.insert(inputAlns.end(), foundMissingAlns.begin(), foundMissingAlns.end());
+        }
+        // 2nd DP
+        dpMatrixRow.clear();
+        long bestPathScore = INT_MIN;
+        unsigned int currId;
+        for (size_t aln = 0; aln < inputAlns.size(); aln++) {
+            long score = queryLength(inputAlns[aln]) * inputAlns[aln].seqId;
+            dpMatrixRow.emplace_back(DpMatrixRow(aln, score));
+        }
+        std::sort(inputAlns.begin(), inputAlns.end(), Matcher::compareHitsByPosWithStrand);
+        for (size_t currExon=0; currExon<inputAlns.size(); currExon++) {
+            long score = queryLength(inputAlns[currExon]) * inputAlns[currExon].seqId;
+            for (size_t prevExon = 0; prevExon < currExon; prevExon++) {
+                int tIntronLength = std::abs(inputAlns[currExon].dbStartPos - inputAlns[prevExon].dbEndPos) + 1;
+                int qIntronLength = inputAlns[currExon].qStartPos - inputAlns[prevExon].qEndPos + 1;
+                bool isNotTooLongIntron = (tIntronLength < MAX_INTRON_LENGTH);
+                bool isNotTooShortIntron = tIntronLength > MIN_INTRON_LENGTH;
+                bool isNotOverlapped = qIntronLength > -MAX_ALIGNMENTS_OVERLAP_LENGTH;
+
+                if (isNotTooLongIntron && isNotTooShortIntron && isNotOverlapped) {
+                    long bestScorePrev = dpMatrixRow[prevExon].pathScore;
+                    long currScoreWithPrev = bestScorePrev + score;
+                    if (currScoreWithPrev > dpMatrixRow[currExon].pathScore) {
+                        dpMatrixRow[currExon].prevPotentialId = prevExon;
+                        dpMatrixRow[currExon].pathScore = currScoreWithPrev;
+                    } //end of if statement to update
+                }
+            }
+            if (dpMatrixRow[currExon].pathScore > bestPathScore) {
+                currId = currExon;
+                bestPathScore = dpMatrixRow[currExon].pathScore;
+            } //end of if conditional statement
+        }
+        while (dpMatrixRow[currId].prevPotentialId != currId) {
+            outputAlns.emplace_back(inputAlns[currId]);
+            currId = dpMatrixRow[currId].prevPotentialId;
+        }
+        outputAlns.emplace_back(inputAlns[currId]);
+        dpMatrixRow.clear();
+        std::sort(outputAlns.begin(), outputAlns.end(), Matcher::compareHitsByPosWithStrand);
+        return outputAlns;
+    }
     // trimming alignments
     std::vector<Matcher::result_t> trimExons(std::vector<Matcher::result_t> exonCandidate, unsigned int thread_idx){
         char * targetSeq = getTargetSequence(exonCandidate[0].dbKey, thread_idx);
@@ -216,39 +250,62 @@ public:
                 int qPos = exonCandidate[currExon].qStartPos - exonCandidate[currExon].qStartPos%3;
                 int dbPos = strand? exonCandidate[currExon].dbStartPos - exonCandidate[currExon].qStartPos%3 : exonCandidate[currExon].dbStartPos + exonCandidate[currExon].qStartPos%3;
                 int scope = resLen + BONUS_SCOPE;
-                std::vector<splicingSiteCandidate> startCodonCands;
-                int pos = -CODON_LENGTH;
-                while (pos<scope){
-                    int dbCurrPos = strand? dbPos-pos : dbPos+pos;
-                    int qCurrPos = qPos - pos;
-                    bool isMetCodon = strand? isMetCodonF(targetSeq, dbCurrPos) : isMetCodonR(targetSeq, dbCurrPos);
-                    if (isMetCodon)
-                        // TEMP
-                        startCodonCands.emplace_back(splicingSiteCandidate(abs(qCurrPos), dbCurrPos, 0));
-//                        startCodonCands.emplace_back(splicingSiteCandidate(abs(pos), dbCurrPos, 0));
-                    pos += 3;
-                }
-                if (startCodonCands.size()>0){
-                    std::sort(startCodonCands.begin(), startCodonCands.end(), compareSplicingSiteCandidate); // score the less the better
-                    exonCandidate[currExon].dbStartPos = startCodonCands[0].dbPos;
+
+                int dbCurrPos;
+                bool isMetCodon;
+                bool isStartCodonFound = false;
+                // pos=0;
+                isMetCodon = strand? isMetCodonF(targetSeq, dbPos) : isMetCodonR(targetSeq, dbPos);
+                if (isMetCodon){
+                    exonCandidate[currExon].dbStartPos = dbPos;
                     exonCandidate[currExon].qStartPos = exonCandidate[currExon].queryOrfStartPos;
-                    startCodonCands.clear();
-                    // Acceptor site
-                } else {
+                    isStartCodonFound = true;
+                }
+                // pos=-CODON_LENGTH
+                dbCurrPos = strand? dbPos+CODON_LENGTH : dbPos-CODON_LENGTH;
+                isMetCodon = strand? isMetCodonF(targetSeq, dbCurrPos) : isMetCodonR(targetSeq, dbCurrPos);
+                if (isMetCodon && ! isStartCodonFound){
+                    exonCandidate[currExon].dbStartPos = dbCurrPos;
+                    exonCandidate[currExon].qStartPos = exonCandidate[currExon].queryOrfStartPos;
+                    isStartCodonFound = true;
+                }
+                int pos = CODON_LENGTH;
+                while (pos<scope && !isStartCodonFound) {
+                    int dbCurrPos = strand? dbPos-pos : dbPos+pos;
+                    bool isMetCodon = strand? isMetCodonF(targetSeq, dbCurrPos) : isMetCodonR(targetSeq, dbCurrPos);
+                    if (isMetCodon){
+                        exonCandidate[currExon].dbStartPos = dbCurrPos;
+                        exonCandidate[currExon].qStartPos = exonCandidate[currExon].queryOrfStartPos;
+                        isStartCodonFound = true;
+                        break;
+                    }
+                    pos += CODON_LENGTH;
+                }
+                if (!isStartCodonFound) {
                     int dbPos = exonCandidate[currExon].dbStartPos;
                     int qPos = exonCandidate[currExon].qStartPos;
-                    std::vector<splicingSiteCandidate> acceptorSiteCands;
-                    for (int pos = START_END_CODON_FIND_SCOPE; pos > -START_END_CODON_FIND_SCOPE; pos--){
-                        int dbCurrPos = strand? dbPos+pos: dbPos-pos;
-                        int qCurrPos = qPos+pos;
-                        bool isAcceptorSite = strand? isAcceptorSiteF(targetSeq, dbCurrPos) : isAcceptorSiteR(targetSeq, dbCurrPos);
-                        if (isAcceptorSite)
-                            acceptorSiteCands.emplace_back(splicingSiteCandidate(abs(pos), dbCurrPos, qCurrPos));
-                    }
-                    if (acceptorSiteCands.size()>0){
-                        std::sort(acceptorSiteCands.begin(), acceptorSiteCands.end(), compareSplicingSiteCandidate); // score the less the better
-                        exonCandidate[currExon].dbStartPos = acceptorSiteCands[0].dbPos;
-                        exonCandidate[currExon].qStartPos = acceptorSiteCands[0].qPos;
+                    for (int pos = 0; pos < EXON_BOUNDARY_FIND_SCOPE; pos++){
+                        int dbCurrPos;
+                        int qCurrPos;
+                        bool isAcceptorSite;
+                        // + pos
+                        dbCurrPos = strand? dbPos+pos: dbPos-pos;
+                        qCurrPos = qPos+pos;
+                        isAcceptorSite = strand? isAcceptorSiteF(targetSeq, dbCurrPos) : isAcceptorSiteR(targetSeq, dbCurrPos);
+                        if (isAcceptorSite){
+                            exonCandidate[currExon].dbStartPos = dbCurrPos;
+                            exonCandidate[currExon].qStartPos = qCurrPos;
+                            break;
+                        }
+                        // - pos
+                        dbCurrPos = strand? dbPos-pos: dbPos+pos;
+                        qCurrPos = qPos-pos;
+                        isAcceptorSite = strand? isAcceptorSiteF(targetSeq, dbCurrPos) : isAcceptorSiteR(targetSeq, dbCurrPos);
+                        if (isAcceptorSite){
+                            exonCandidate[currExon].dbStartPos = dbCurrPos;
+                            exonCandidate[currExon].qStartPos = qCurrPos;
+                            break;
+                        }
                     }
                 }
                 // middle Exons
@@ -262,37 +319,63 @@ public:
                     exonCandidate[currExon].qStartPos = dornorAcceptorSiteCands[0].qAcceptorPos;
                     exonCandidate[currExon].dbStartPos = dornorAcceptorSiteCands[0].dbAcceptorPos;
                 } else {
+                    int dbPos;
+                    int qPos;
+
                     // donor site
-                    int dbPos = exonCandidate[currExon-1].dbEndPos;
-                    int qPos = exonCandidate[currExon-1].qEndPos;
-                    std::vector<splicingSiteCandidate> donorSiteCands;
-                    for (int pos = -START_END_CODON_FIND_SCOPE; pos < START_END_CODON_FIND_SCOPE; pos++) {
-                        int dbTempPos = strand ? dbPos+pos : dbPos-pos;
-                        int qTempPos = qPos + pos;
-                        bool isDonorSite = strand ? isDonorSitF(targetSeq, dbTempPos) : isDonorSiteR(targetSeq, dbTempPos);
-                        if (isDonorSite)
-                            donorSiteCands.emplace_back(splicingSiteCandidate(abs(pos), dbTempPos, qTempPos));
-                    }
-                    if (donorSiteCands.size()>0){
-                        std::sort(donorSiteCands.begin(), donorSiteCands.end(),compareSplicingSiteCandidate);// score the less the better
-                        exonCandidate[currExon-1].dbEndPos = donorSiteCands[0].dbPos;
-                        exonCandidate[currExon-1].qEndPos = donorSiteCands[0].qPos;
+                    dbPos = exonCandidate[currExon-1].dbEndPos;
+                    qPos = exonCandidate[currExon-1].qEndPos;
+                    for (size_t pos = 0; pos < EXON_BOUNDARY_FIND_SCOPE; pos++) {
+                        int dbTempPos;
+                        int qTempPos;
+                        bool isDonorSite;
+                        // -pos
+                        dbTempPos = strand ? dbPos-pos : dbPos+pos;
+                        qTempPos = qPos - pos;
+                        isDonorSite = strand ? isDonorSitF(targetSeq, dbTempPos) : isDonorSiteR(targetSeq, dbTempPos);
+                        if (isDonorSite){
+                            exonCandidate[currExon-1].dbEndPos = dbTempPos;
+                            exonCandidate[currExon-1].qEndPos = qTempPos;
+                            break;
+                        }
+                        // + pos
+                        dbTempPos = strand ? dbPos+pos : dbPos-pos;
+                        qTempPos = qPos + pos;
+                        isDonorSite = strand ? isDonorSitF(targetSeq, dbTempPos) : isDonorSiteR(targetSeq, dbTempPos);
+                        if (isDonorSite){
+                            exonCandidate[currExon-1].dbEndPos = dbTempPos;
+                            exonCandidate[currExon-1].qEndPos = qTempPos;
+                            break;
+                        }
                     }
                     // acceptor site
                     dbPos = exonCandidate[currExon].dbStartPos;
                     qPos = exonCandidate[currExon].qStartPos;
                     std::vector<splicingSiteCandidate> acceptorSiteCands;
-                    for (int pos=START_END_CODON_FIND_SCOPE; pos > -START_END_CODON_FIND_SCOPE; pos--) {
-                        int dbTempPos = strand ? dbPos+pos : dbPos-pos;
-                        int qTempPos = qPos + pos;
-                        bool isAcceptorSite = strand ? isAcceptorSiteF(targetSeq, dbTempPos) : isAcceptorSiteR(targetSeq, dbTempPos);
-                        if (isAcceptorSite)
-                            acceptorSiteCands.emplace_back(abs(pos), dbTempPos, qTempPos);
-                    }
-                    if (acceptorSiteCands.size()>0){
-                        std::sort(acceptorSiteCands.begin(), acceptorSiteCands.end(), compareSplicingSiteCandidate); // score the less the better
-                        exonCandidate[currExon].dbStartPos = acceptorSiteCands[0].dbPos;
-                        exonCandidate[currExon].qStartPos = acceptorSiteCands[0].qPos;
+                    for (size_t pos=0; pos < EXON_BOUNDARY_FIND_SCOPE; pos++) {
+                        int dbTempPos;
+                        int qTempPos;
+                        bool isAcceptorSite;
+
+                        // + pos
+                        dbTempPos = strand ? dbPos+pos : dbPos-pos;
+                        qTempPos = qPos + pos;
+                        isAcceptorSite = strand ? isAcceptorSiteF(targetSeq, dbTempPos) : isAcceptorSiteR(targetSeq, dbTempPos);
+                        if (isAcceptorSite){
+                            exonCandidate[currExon].dbStartPos = dbTempPos;
+                            exonCandidate[currExon].qStartPos = qTempPos;
+                            break;
+                        }
+
+                        // - pos
+                        dbTempPos = strand ? dbPos-pos : dbPos+pos;
+                        qTempPos = qPos - pos;
+                        isAcceptorSite = strand ? isAcceptorSiteF(targetSeq, dbTempPos) : isAcceptorSiteR(targetSeq, dbTempPos);
+                        if (isAcceptorSite){
+                            exonCandidate[currExon].dbStartPos = dbTempPos;
+                            exonCandidate[currExon].qStartPos = qTempPos;
+                            break;
+                        }
                     }
                 }
             }
@@ -319,18 +402,28 @@ public:
             int dbPos = exonCandidate[exonCandidate.size()-1].dbEndPos;
             int qPos = exonCandidate[exonCandidate.size()-1].qEndPos;
             std::vector<splicingSiteCandidate> donorSiteCands;
-            for (int pos = -START_END_CODON_FIND_SCOPE; pos < START_END_CODON_FIND_SCOPE; pos++){
-                int dbTempPos = strand? dbPos+pos : dbPos-pos;
-                int qTempPos = qPos+pos;
-                bool isDonorSite = strand ? isDonorSitF(targetSeq, dbTempPos) : isDonorSiteR(targetSeq, dbTempPos);
+            for (int pos = 0; pos < EXON_BOUNDARY_FIND_SCOPE; pos++){
+                int dbTempPos;
+                int qTempPos;
+                bool isDonorSite;
+                // -pos
+                dbTempPos = strand? dbPos-pos : dbPos+pos;
+                qTempPos = qPos-pos;
+                isDonorSite = strand ? isDonorSitF(targetSeq, dbTempPos) : isDonorSiteR(targetSeq, dbTempPos);
                 if (isDonorSite){
-                    donorSiteCands.emplace_back(splicingSiteCandidate(abs(pos), dbTempPos, qTempPos));
+                    exonCandidate[exonCandidate.size()-1].dbEndPos = dbTempPos;
+                    exonCandidate[exonCandidate.size()-1].qEndPos = qTempPos;
+                    break;
                 }
-            }
-            if (donorSiteCands.size()>0) {
-                std::sort(donorSiteCands.begin(), donorSiteCands.end(), compareSplicingSiteCandidate);
-                exonCandidate[exonCandidate.size()-1].dbEndPos = donorSiteCands[0].dbPos;
-                exonCandidate[exonCandidate.size()-1].qEndPos = donorSiteCands[0].qPos;
+                // +pos
+                dbTempPos = strand? dbPos+pos : dbPos-pos;
+                qTempPos = qPos+pos;
+                isDonorSite = strand ? isDonorSitF(targetSeq, dbTempPos) : isDonorSiteR(targetSeq, dbTempPos);
+                if (isDonorSite){
+                    exonCandidate[exonCandidate.size()-1].dbEndPos = dbTempPos;
+                    exonCandidate[exonCandidate.size()-1].qEndPos = qTempPos;
+                    break;
+                }
             }
         }
         return exonCandidate;
@@ -343,18 +436,11 @@ private:
     const int CODON_LENGTH = 3;
     const int BONUS_SCOPE = 60;
     const int MAX_RESIDUE_LENGTH = 30;
-    const int START_END_CODON_FIND_SCOPE = 90;
-    const int MAX_ALIGNMENTS_OVERLAP_LENGTH = 90;
-
+    const int EXON_BOUNDARY_FIND_SCOPE = 90;
+    const int MAX_ALIGNMENTS_OVERLAP_LENGTH = 90; //90;
     IndexReader * tDbr;
-<<<<<<< HEAD
     IndexReader * qDbr;
     unsigned int queryKey;
-=======
-//    IndexReader * qDbr;
-    // Do I need?
-//    unsigned int queryKey;
->>>>>>> c6997cea3e1ed78f9d7b96fd98b5cca175fa81a6
     std::vector<DpMatrixRow> dpMatrixRow;
     typedef std::pair<char, int> cigarTuple;
     typedef std::pair<char, char> aminoAcidPair;
@@ -388,21 +474,20 @@ private:
 
     std::vector<std::string> getOrfs(std::string seq){
         std::vector<std::string> orfVector;
-        size_t seqLen = seq.size();
-        size_t len = seq.size();
+        size_t seqLen = seq.length();
         for (size_t i=0; i<3; i++){
             orfVector.emplace_back(getSubSequence(seq,i,seqLen-(seqLen-i)%3));
         }
         return orfVector;
     }
 
-    std::string getCigarString(std::vector<cigarTuple> cList){
+    std::string getCigarString(std::vector<cigarTuple> cigarTuples){
         std::string cigar;
-        char prevCigar = cList[0].second;
-        int prevNum = cList[0].first;
-        for (size_t i=1; i<cList.size(); i++) {
-            int currNum = cList[i].first;
-            char currCigar = toupper(cList[i].second);
+        char prevCigar = cigarTuples[0].second;
+        int prevNum = cigarTuples[0].first;
+        for (size_t i=1; i < cigarTuples.size(); i++) {
+            int currNum = cigarTuples[i].first;
+            char currCigar = toupper(cigarTuples[i].second);
             if (currCigar != prevCigar){
                 cigar = cigar + std::to_string(prevNum) + prevCigar;
                 prevNum = currNum;
@@ -416,7 +501,7 @@ private:
     }
 
     int getGapOpen(std::string cigarString) {
-        int numGaps;
+        int numGaps=0;
         for (size_t i=0; i<cigarString.size(); i++){
             char cigar = cigarString[i];
             if (cigar=='I' && cigar=='D')
@@ -428,15 +513,18 @@ private:
     std::vector<Matcher::result_t> findMissingAlignments(
             std::string qOrfSeq,
             std::vector<std::string> tOrfVector,
-            unsigned int dbkey,
+            unsigned int dbKey,
             int qAlnStart,
             int dbStart,
             int queryOrfStartPos,
             int queryOrfEndPos,
             int dbOrfStartPos,
-            int dbOrfEndPos
+            int dbOrfEndPos,
+            unsigned int dbLen
     ){
         std::vector<Matcher::result_t> foundMissingAlignments;
+        std::vector<Matcher::result_t> filteredFoundMissingAlignments;
+        bool strand = dbOrfEndPos > dbOrfStartPos;
         int penalty = -4;
         for (size_t tOrfIdx = 0; tOrfIdx < 3; tOrfIdx++){
             std::string tOrfSeq = tOrfVector[tOrfIdx];
@@ -444,36 +532,33 @@ private:
             dpMatrix.insert({std::pair<int,int>(-3,-3), 0});
             int qPos = 0;
             int tPos = 0;
-
             std::vector<std::pair<int,int>> foundAlnsEndPositions;
-            while (qPos < qOrfSeq.size()){
+            while (qPos < qOrfSeq.length()){
                 dpMatrix.insert({std::pair<int,int>(qPos, -3), 0});
                 qPos += 3;
             }
-            while (tPos < tOrfSeq.size()){
+            while (tPos < tOrfSeq.length()){
                 dpMatrix.insert({std::pair<int,int>(-3, tPos), 0});
                 tPos += 3;
             }
             qPos = 0;
-            int maxScore = -1;
-            while (qPos < qOrfSeq.size()) {
+            int maxScore = 0;
+            while (qPos < qOrfSeq.length()) {
                 std::string qCodon = getSubSequence(qOrfSeq, qPos, qPos + CODON_LENGTH);
                 char qAA = translateCodon(qCodon);
                 tPos = 0;
-                while (tPos < tOrfSeq.size()) {
+                while (tPos < tOrfSeq.length()) {
                     std::string tCodon = getSubSequence(tOrfSeq, tPos, tPos + CODON_LENGTH);
                     char tAA = translateCodon(tCodon);
                     int score = std::max(
-                            {
-                                    dpMatrix.at(std::pair<int, int>(qPos - 3, tPos - 3)) +
-                                    getBlosum62Score(aminoAcidPair(qAA, tAA)),
-                                    dpMatrix.at(std::pair<int, int>(qPos - 3, tPos)) + penalty,
-                                    dpMatrix.at(std::pair<int, int>(qPos, tPos - 3)) + penalty,
-                                    0
-                            }
+                        {
+                            dpMatrix[std::pair<int, int>(qPos - 3, tPos - 3)] + getBlosum62Score(aminoAcidPair(qAA, tAA)),
+                            dpMatrix[std::pair<int, int>(qPos - 3, tPos)] + penalty,
+                            dpMatrix[std::pair<int, int>(qPos, tPos - 3)] + penalty,
+                            0
+                        }
                     );
                     dpMatrix.insert({std::pair<int,int>(qPos, tPos), score});
-                    tPos += 3;
                     if (score > maxScore){
                         maxScore = score;
                         foundAlnsEndPositions.clear();
@@ -481,21 +566,22 @@ private:
                     } else if (score == maxScore){
                         foundAlnsEndPositions.emplace_back(std::pair<int,int>(qPos, tPos));
                     }
+                    tPos += CODON_LENGTH;
                 }
-                qPos += 3;
+                qPos += CODON_LENGTH;
             } // DP End
             for (size_t endPosPair=0; endPosPair<foundAlnsEndPositions.size(); endPosPair++) {
                 int qDpEndPos = foundAlnsEndPositions[endPosPair].first;
                 int tDpEndPos = foundAlnsEndPositions[endPosPair].second;
                 int qPrevPos = qDpEndPos;
                 int tPrevPos = tDpEndPos;
-                int matches;
-                int mismarches;
-                int gapOpen;
-                unsigned int alnLen;
+                int matches = 0;
+                int mismarches = 0;
+                int gapOpen = 0;
+                unsigned int alnLen = 0;
                 qPos = qDpEndPos;
                 tPos = tDpEndPos;
-                std::vector<cigarTuple> cigarVector;
+                std::string cigarVector;
                 float seqId;
                 std::string cigarString;
 
@@ -505,48 +591,50 @@ private:
                     std::string tCodon = getSubSequence(tOrfSeq, tPos, tPos + CODON_LENGTH);
                     char tAA = translateCodon(tCodon);
                     int currScore = dpMatrix[std::pair<int,int>(qPos, tPos)];
-
                     if (currScore == 0) {
-                        if (alnLen == 0)
+                        //
+                        seqId = (alnLen==0) ? 0 : (float) matches/alnLen;
+                        if (seqId < 0.20)
                             break;
-                        seqId = (float) matches / alnLen;
-                        cigarString = getCigarString(cigarVector);
+                        //
+                        char prevCigar = cigarVector[0];
+                        int cigarCounter=1;
+                        for (size_t i=1; i<cigarVector.length(); i++){
+                            char currCigar = cigarVector[i];
+                            if (currCigar==prevCigar){
+                                cigarCounter ++;
+                            } else {
+                                cigarString = cigarString + std::to_string(cigarCounter*CODON_LENGTH) + prevCigar;
+                                prevCigar = currCigar;
+                                cigarCounter = 1;
+                            }
+                        }
+                        //
+                        cigarString = cigarString + std::to_string(cigarCounter*CODON_LENGTH) + prevCigar;
                         gapOpen = getGapOpen(cigarString);
                         int qStartPos = qPrevPos + qAlnStart;
                         int qEndPos = qDpEndPos + qAlnStart;
-                        unsigned int qLen = qEndPos - qStartPos + 1;
-                        int dbStartPos = tPrevPos + dbStart;
-                        int dbEndPos = tDpEndPos + dbStart;
-                        unsigned int dbLen = std::abs(dbStartPos - dbEndPos) + 1;
+                        unsigned int qLen = queryOrfEndPos - queryOrfStartPos + 1;
+                        int dbStartPos = strand ? (dbStart + tPrevPos): (dbStart - tPrevPos);
+                        int dbEndPos =  strand ? (dbStart + tDpEndPos): (dbStart - tDpEndPos);
                         float qCov = (float)qLen/(queryOrfEndPos - queryOrfStartPos+1);
+                        // default
+                        int bitScore = 0;
+                        float dbCov = 0;
+                        double eValue = 10000;
                         foundMissingAlignments.emplace_back(
-                                Matcher::result_t(
-                                        dbkey,
-                                        0, //score
-                                        qCov,//qCov
-                                        0,//dbCov
-                                        seqId,
-                                        10000, //eValue = 1.0e+04
-                                        alnLen,
-                                        qStartPos,
-                                        qEndPos,
-                                        qLen,
-                                        dbStartPos,
-                                        dbEndPos,
-                                        dbLen,
-                                        queryOrfStartPos,
-                                        queryOrfEndPos,
-                                        dbOrfStartPos,
-                                        dbOrfEndPos,
-                                        cigarString
-                                )
+                            Matcher::result_t(
+                                dbKey, bitScore, qCov, dbCov, seqId, eValue, alnLen,
+                                qStartPos, qEndPos, qLen, dbStartPos, dbEndPos, dbLen,
+                                queryOrfStartPos, queryOrfEndPos, dbOrfStartPos, dbOrfEndPos, cigarString
+                            )
                         );
                         break;
                     } else if (currScore == dpMatrix[std::pair<int,int>(qPos-CODON_LENGTH, tPos-CODON_LENGTH)]+getBlosum62Score(aminoAcidPair(qAA, tAA))) {
                         alnLen += CODON_LENGTH;
                         matches = (qAA == tAA) ? matches + CODON_LENGTH : matches;
                         mismarches = (qAA == tAA) ? mismarches + CODON_LENGTH : mismarches;
-                        cigarVector.emplace_back(cigarTuple(CODON_LENGTH, 'M'));
+                        cigarVector = 'M' + cigarVector;
                         qPrevPos = qPos;
                         tPrevPos = tPos;
                         qPos -= 3;
@@ -554,21 +642,51 @@ private:
                     } else if (currScore == dpMatrix[std::pair<int,int>(qPos-3, tPos)]+penalty){
                         alnLen += CODON_LENGTH;
                         mismarches = mismarches+CODON_LENGTH;
-                        cigarVector.emplace_back(cigarTuple(CODON_LENGTH, 'D'));
+                        cigarVector = 'D' + cigarVector;
                         qPrevPos = qPos;
                         qPos-=3;
                     } else if (currScore == dpMatrix[std::pair<int,int>(qPos, tPos-3)]+penalty) {
                         alnLen += CODON_LENGTH;
                         mismarches = mismarches + CODON_LENGTH;
-                        cigarVector.emplace_back(cigarTuple(CODON_LENGTH, 'I'));
+                        cigarVector = 'I' + cigarVector;
                         tPrevPos = tPos;
                         tPos -= 3;
                     }
-
                 } // backtracing
             } // for end iterating db results
         } // for end iterating db orfs
-        return foundMissingAlignments;
+        if (foundMissingAlignments.size()==0)
+            return filteredFoundMissingAlignments;
+        dpMatrixRow.clear();
+        std::sort(foundMissingAlignments.begin(), foundMissingAlignments.end(), Matcher::compareHitsByPosWithStrand);
+        unsigned int maxScore = 0;
+        size_t currId;
+        for (size_t idx=0; idx<foundMissingAlignments.size(); idx++) {
+            int score = queryLength(foundMissingAlignments[idx]) * foundMissingAlignments[idx].seqId;
+            dpMatrixRow.emplace_back(DpMatrixRow(idx, score));
+        }
+        for (size_t currAln=0; currAln<foundMissingAlignments.size(); currAln++){
+            unsigned int score = queryLength(foundMissingAlignments[currAln]) * foundMissingAlignments[currAln].seqId; //dpMatrixRow[currAln].pathScore;
+            for (size_t prevAln=0; prevAln<currAln; prevAln++) {
+                unsigned int currPathScore = dpMatrixRow[prevAln].pathScore + score;
+                // temp
+                if (foundMissingAlignments[currAln].qStartPos > foundMissingAlignments[prevAln].qEndPos && currPathScore > dpMatrixRow[currAln].pathScore) { // && foundMissingAlignments[currAln].seqId>=0.4
+                    dpMatrixRow[currAln].pathScore = currPathScore;
+                    dpMatrixRow[currAln].prevPotentialId = prevAln;
+                }
+            }
+            if (dpMatrixRow[currAln].pathScore > maxScore ){
+                maxScore = dpMatrixRow[currAln].pathScore;
+                currId = currAln;
+            }
+        }
+        while (dpMatrixRow[currId].prevPotentialId != currId) {
+            filteredFoundMissingAlignments.emplace_back(foundMissingAlignments[currId]);
+            currId = dpMatrixRow[currId].prevPotentialId;
+        }
+        filteredFoundMissingAlignments.emplace_back(foundMissingAlignments[currId]);
+        dpMatrixRow.clear();
+        return filteredFoundMissingAlignments;
     }
 
 //
@@ -735,7 +853,7 @@ private:
         if (toupper(codon[0])=='N' || toupper(codon[1])=='N' || toupper(codon[2])=='N'){
             return ' ';
         } else {
-            return codonTable.at(codon);
+            return codonTable[codon];
         }
     }
 
@@ -743,7 +861,7 @@ private:
         if (aaPair.first==' ' || aaPair.second==' '){
             return -4; // minimum blosum62 score
         } else {
-            return blosum62.at(aaPair);
+            return blosum62[aaPair];
         }
     }
 
@@ -761,7 +879,9 @@ private:
             if(prevStrand==currStrand && prevDBKey == currDBKey && !tooLongIntron){
                 tempVector.emplace_back(exonPath[i]);
             }else{
-                exonCombination.emplace_back(0, tempVector);
+                exonCombination.emplace_back(ExonCandidates(0, std::vector<Matcher::result_t>()));
+                unsigned int idx = exonCombination.size()-1;
+                exonCombination[idx].alignments.insert(exonCombination[idx].alignments.end(), tempVector.begin(), tempVector.end());
                 tempVector.clear();
                 prevDBKey = exonPath[i].dbKey;
                 prevStrand = exonPath[i].dbEndPos > exonPath[i].dbStartPos;
@@ -798,7 +918,7 @@ private:
         int startPos = 0;
         int digits = 0;
         int numMatches = 0;
-        for (size_t pos = 0; pos < backtrace.size(); pos++) {
+        for (size_t pos = 0; pos < backtrace.length(); pos++) {
             if(!isdigit(backtrace[pos])){
                 int num = std::stoi(backtrace.substr(startPos, digits));
                 char cha = backtrace[pos];
@@ -1139,17 +1259,22 @@ int findexons(int argc, const char **argv, const Command &command) {
         thread_idx = static_cast<unsigned int>(omp_get_thread_num());
 #endif
         std::vector<Matcher::result_t> totalInputAlignments;
-        std::vector<Matcher::result_t> orfAlignments;
-        std::vector<Matcher::result_t> optimalExonSolution;
-        std::vector<ExonCandidates> optimalSolutionsWithScores;
+        std::vector<Matcher::result_t> alignments;
+        std::vector<Matcher::result_t> optimalAlns;
+        std::vector<ExonCandidates> optimalAlnsWithScore;
         char buffer[2048];
 
 #pragma omp  for schedule(dynamic, 10)
         for (size_t i = 0; i < alnDbr.getSize(); i++) {
             progress.updateProgress();
             const unsigned int queryKey = alnDbr.getDbKey(i);
-//            if (queryKey==498)
-//                std::cout<<""<<std::endl;
+            std::cout << ">>\t" << queryKey << std::endl;
+            if (queryKey==404){
+                std::cout<< "?" << std::endl;
+            }
+            else {
+                continue;
+            }
             ExonFinder exonFinder(&tDbr, &qDbr, queryKey);
             char *data = alnDbr.getData(i, thread_idx);
             if(data[0]=='\0'){
@@ -1164,7 +1289,7 @@ int findexons(int argc, const char **argv, const Command &command) {
             resultWriter.writeStart(thread_idx);
             long orfScore = 0;
             long maxScore = 0;
-            optimalSolutionsWithScores.clear();
+            optimalAlnsWithScore.clear();
             for(size_t resIdx = 0; resIdx < totalInputAlignments.size(); resIdx++){
                 // to make sure that query position is never reversed, only db position can be reversed
                 // In default we search only on the formward frame 1,2,3 so this function is not called
@@ -1174,46 +1299,48 @@ int findexons(int argc, const char **argv, const Command &command) {
                 } // end of if conditional statement to correct flipped exon
                 bool querySameOrf = prevQueryOrfStartPos == totalInputAlignments[resIdx].queryOrfStartPos && prevQueryOrfEndPos == totalInputAlignments[resIdx].queryOrfEndPos;
                 if(querySameOrf){
-                    orfAlignments.emplace_back(totalInputAlignments[resIdx]);
+                    alignments.emplace_back(totalInputAlignments[resIdx]);
                 }else{
                     // getOptimalAlignmentsCombinaitons
-                    exonFinder.findOptimalExons(
-                            optimalExonSolution,
-                            orfAlignments,
-                            thread_idx,
-                            orfScore);
-                    orfAlignments.clear();
+                    exonFinder.getOptimalAlns(optimalAlns, alignments, thread_idx, orfScore);
+                    alignments.clear();
                     if(orfScore>maxScore){
-                        optimalSolutionsWithScores.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
+                        optimalAlnsWithScore.emplace_back(ExonCandidates(orfScore, std::vector<Matcher::result_t>()));
+                        //optimalAlns
+                        unsigned int idx = optimalAlnsWithScore.size()-1;
+                        optimalAlnsWithScore[idx].alignments.insert(optimalAlnsWithScore[idx].alignments.end(), optimalAlns.begin(), optimalAlns.end());
                         maxScore = orfScore;
                     }
-                    orfAlignments.emplace_back(totalInputAlignments[resIdx]);
+                    alignments.emplace_back(totalInputAlignments[resIdx]);
                     prevQueryOrfStartPos = totalInputAlignments[resIdx].queryOrfStartPos;
                     prevQueryOrfEndPos = totalInputAlignments[resIdx].queryOrfEndPos;
                 }
             }
             //last orf info -> optimal
-            if(orfAlignments.size() > 0){
+            if(alignments.size() > 0){
                 // getOptimalAlignmentsCombinaitons
-                exonFinder.findOptimalExons(
-                        optimalExonSolution,
-                        orfAlignments,
-                        thread_idx,
-                        orfScore
-                );
-                orfAlignments.clear();
+                exonFinder.getOptimalAlns(optimalAlns, alignments, thread_idx, orfScore);
+                alignments.clear();
                 if(orfScore>maxScore){
-                    optimalSolutionsWithScores.emplace_back(ExonCandidates(orfScore, optimalExonSolution));
+                    optimalAlnsWithScore.emplace_back(ExonCandidates(orfScore, std::vector<Matcher::result_t>()));
+                    //optimalAlns
+                    unsigned int idx = optimalAlnsWithScore.size()-1;
+                    optimalAlnsWithScore[idx].alignments.insert(optimalAlnsWithScore[idx].alignments.end(), optimalAlns.begin(), optimalAlns.end());
                     maxScore = orfScore;
                 }
             }
             // output
-            if(optimalSolutionsWithScores.size() > 0) {
+            std::cout << "dp" << std::endl;
+            if(optimalAlnsWithScore.size() > 0) {
                 // the last vector in optimalSolutionsWithScores contains the best solution
-                optimalSolutionsWithScores[optimalSolutionsWithScores.size() - 1].candidates = exonFinder.trimExons(optimalSolutionsWithScores[optimalSolutionsWithScores.size() - 1].candidates, thread_idx);
-                size_t optimestPathSize = optimalSolutionsWithScores[optimalSolutionsWithScores.size() - 1].candidates.size();
+                unsigned  int idx = optimalAlnsWithScore.size()- 1;
+                std::vector<Matcher::result_t> complementedAlns = exonFinder.ComplementAlns(optimalAlnsWithScore[idx].alignments, thread_idx);
+                std::cout << "missing" << std::endl;
+                optimalAlnsWithScore[optimalAlnsWithScore.size() - 1].alignments = exonFinder.trimExons(complementedAlns, thread_idx);
+                std::cout << "trimming" << std::endl;
+                size_t optimestPathSize = optimalAlnsWithScore[optimalAlnsWithScore.size() - 1].alignments.size();
                 for(size_t optIdx = 0; optIdx < optimestPathSize; optIdx++){
-                    size_t len = Matcher::resultToBuffer(buffer, optimalSolutionsWithScores[optimalSolutionsWithScores.size() - 1].candidates[optIdx], true, false, true);
+                    size_t len = Matcher::resultToBuffer(buffer, optimalAlnsWithScore[optimalAlnsWithScore.size() - 1].alignments[optIdx], true, false, true);
                     resultWriter.writeAdd(buffer, len, thread_idx);//result buffer, len, thread_idx
                 }
             }
@@ -1225,6 +1352,3 @@ int findexons(int argc, const char **argv, const Command &command) {
     alnDbr.close();
     return EXIT_SUCCESS;
 } //end of method <findexon>
-
-
-
