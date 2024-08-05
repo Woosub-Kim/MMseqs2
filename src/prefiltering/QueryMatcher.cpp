@@ -97,7 +97,9 @@ std::pair<hit_t*, size_t> QueryMatcher::matchQuery(Sequence *querySeq, unsigned 
     } else {
         memset(compositionBias, 0, sizeof(float) * querySeq->L);
     }
-
+    if(diagonalScoring == true){
+        ungappedAlignment->createProfile(querySeq, compositionBias);
+    }
     size_t resultSize = match(querySeq, compositionBias);
     if (hook != NULL) {
         resultSize = hook->afterDiagonalMatchingHook(*this, resultSize);
@@ -105,7 +107,7 @@ std::pair<hit_t*, size_t> QueryMatcher::matchQuery(Sequence *querySeq, unsigned 
     std::pair<hit_t *, size_t> queryResult;
     if (diagonalScoring) {
         // write diagonal scores in count value
-        ungappedAlignment->processQuery(querySeq, compositionBias, foundDiagonals, resultSize);
+        ungappedAlignment->align(foundDiagonals, resultSize);
         memset(scoreSizes, 0, SCORE_RANGE * sizeof(unsigned int));
         CounterResult * resultReadPos  = foundDiagonals;
         CounterResult * resultWritePos = foundDiagonals + resultSize;
@@ -169,11 +171,16 @@ std::pair<hit_t*, size_t> QueryMatcher::matchQuery(Sequence *querySeq, unsigned 
             }else{
                 queryResult = getResult<UNGAPPED_DIAGONAL_SCORE>(resultReadPos, elementsCntAboveDiagonalThr, identityId, diagonalThr, ungappedAlignment, false);
             }
-            stats->truncated = 0;
         }else{
-            //Debug(Debug::WARNING) << "Sequence " << querySeq->getDbKey() << " produces too many hits. Results might be truncated\n";
-            queryResult = getResult<UNGAPPED_DIAGONAL_SCORE>(resultReadPos, resultSize, identityId, diagonalThr, ungappedAlignment, false);
-            stats->truncated = 1;
+            size_t resultPos = 0;
+            for (size_t i = 0; i < resultSize; i++) {
+                resultReadPos[resultPos].id = resultReadPos[i].id;
+                resultReadPos[resultPos].diagonal = resultReadPos[i].diagonal;
+                resultReadPos[resultPos].count = resultReadPos[i].count;
+                resultPos += (resultReadPos[i].count >= diagonalThr);
+            }
+            SORT_SERIAL(resultReadPos, resultReadPos + resultPos, CounterResult::sortScore);
+            queryResult = getResult<UNGAPPED_DIAGONAL_SCORE>(resultReadPos, resultPos, identityId, diagonalThr, ungappedAlignment, false);
         }
     }else{
         unsigned int thr = computeScoreThreshold(scoreSizes, this->maxHitsPerQuery);
@@ -181,11 +188,16 @@ std::pair<hit_t*, size_t> QueryMatcher::matchQuery(Sequence *querySeq, unsigned 
         if(resultSize < foundDiagonalsSize / 2) {
             int elementsCntAboveDiagonalThr = radixSortByScoreSize(scoreSizes, foundDiagonals + resultSize, thr, foundDiagonals, resultSize);
             queryResult = getResult<KMER_SCORE>(foundDiagonals + resultSize, elementsCntAboveDiagonalThr, identityId, thr, ungappedAlignment, false);
-            stats->truncated = 0;
         }else{
-//            Debug(Debug::WARNING) << "Sequence " << querySeq->getDbKey() << " produces too many hits. Results might be truncated\n";
-            queryResult = getResult<KMER_SCORE>(foundDiagonals, resultSize, identityId, thr, ungappedAlignment, false);
-            stats->truncated = 1;
+            size_t resultPos = 0;
+            for (size_t i = 0; i < resultSize; i++) {
+                foundDiagonals[resultPos].id = foundDiagonals[i].id;
+                foundDiagonals[resultPos].diagonal = foundDiagonals[i].diagonal;
+                foundDiagonals[resultPos].count = foundDiagonals[i].count;
+                resultPos += (foundDiagonals[i].count >= thr);
+            }
+            SORT_SERIAL(foundDiagonals, foundDiagonals + resultPos, CounterResult::sortScore);
+            queryResult = getResult<KMER_SCORE>(foundDiagonals, resultPos, identityId, thr, ungappedAlignment, false);
         }
     }
     if(queryResult.second > 1){
@@ -257,10 +269,12 @@ size_t QueryMatcher::match(Sequence *seq, float *compositionBias) {
             //std::cout << seq->getDbKey() << std::endl;
             //idx.printKmer(index[kmerPos], kmerSize, kmerSubMat->num2aa);
             //std::cout << "\t" << current_i << "\t"<< index[kmerPos] << std::endl;
-            //for (size_t i = 0; i < seqListSize; i++) {
-            //    char diag = entries[i].position_j - current_i;
-            //    std::cout << "(" << entries[i].seqId << " " << (int) diag << ")\t";
-            //}
+//            for (size_t i = 0; i < seqListSize; i++) {
+//                if(23865 == entries[i].seqId ){
+//                    char diag = entries[i].position_j - current_i;
+//                    std::cout << "(" << entries[i].seqId << " " << (int) diag << ")\t";
+//                }
+//            }
             //std::cout << std::endl;
 
             // detected overflow while matching
@@ -273,10 +287,19 @@ size_t QueryMatcher::match(Sequence *seq, float *compositionBias) {
                                                        foundDiagonals + overflowHitCount,
                                                        foundDiagonalsSize - overflowHitCount,
                                                        indexStart, current_i, (diagonalScoring == false));
-
+                // this happens only if we have two overflows in a row
                 if (overflowHitCount != 0) {
-                    // merge lists, hitCount is max. dbSize so there can be no overflow in mergeElements
-                    overflowHitCount = mergeElements(foundDiagonals, hitCount + overflowHitCount);
+                    if(diagonalScoring == true){
+                        overflowHitCount = mergeElements(foundDiagonals, hitCount + overflowHitCount, true);
+                        // align the new diaognals
+                        ungappedAlignment->align(foundDiagonals, overflowHitCount);
+                        // We keep only the maximal diagonal scoring hit, so the max number of hits is DBsize
+                        overflowHitCount = keepMaxScoreElementOnly(foundDiagonals, overflowHitCount);
+                    } else {
+                        // in case of scoring we just sum up in mergeElements, so the max number of hits is DBsize
+                        // merge lists, hitCount is max. dbSize so there can be no overflow in mergeElements
+                        overflowHitCount = mergeElements(foundDiagonals, hitCount + overflowHitCount);
+                    }
                 } else {
                     overflowHitCount = hitCount;
                 }
@@ -444,11 +467,11 @@ size_t QueryMatcher::findDuplicates(IndexEntryLocal **hitsByIndex,
     return localResultSize;
 }
 
-size_t QueryMatcher::mergeElements(CounterResult *foundDiagonals, size_t hitCounter) {
+size_t QueryMatcher::mergeElements(CounterResult *foundDiagonals, size_t hitCounter, bool keepScoredHits) {
     size_t overflowHitCount = 0;
 #define MERGE_CASE(x) \
     case x: overflowHitCount = diagonalScoring ? \
-                               cachedOperation##x->mergeElementsByDiagonal(foundDiagonals,hitCounter) : \
+                               cachedOperation##x->mergeElementsByDiagonal(foundDiagonals,hitCounter, keepScoredHits) : \
                                cachedOperation##x->mergeElementsByScore(foundDiagonals,hitCounter); \
     break;
 
